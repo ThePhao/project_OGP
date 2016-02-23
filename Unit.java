@@ -43,7 +43,17 @@ public class Unit {
 	 * Variable registering the position of this unit.
 	 */
 	private double[] position;
+	
+	/**
+	 * Variable registering the lower bound for the x, y and z
+	 * dimensions of the generated world.
+	 */
 	public static int lowerbound = 0;
+	
+	/**
+	 * Variable registering the upper bound for the x, y and z
+	 * dimensions of the generated world.
+	 */
 	public static int upperbound = 50;
 	
 	/**
@@ -64,7 +74,6 @@ public class Unit {
 	
 	/**
 	 * Return the position of this unit.
-	 * @return
 	 */
 	@Basic
 	public double[] getPosition(){
@@ -73,7 +82,6 @@ public class Unit {
 	
 	/**
 	 * Return the position of the cube occupied by this unit.
-	 * @return
 	 */
 	public int[] getCube(){
 		int[] cubeposition = new int[this.position.length];
@@ -83,3 +91,4 @@ public class Unit {
 	}
 
 }
+
