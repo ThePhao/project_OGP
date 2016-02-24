@@ -174,5 +174,24 @@ public class Unit {
 		if( (toughness >= 1) && (toughness <=200))
 			this.toughness = toughness;
 	}
+	
+	/**
+	 * inspect the current orientation of this unit
+	 */
+	@Basic
+	public float getOrientation (){
+		return this.orientation;
+	}
+	/**
+	 * Change the orientation of this unit to the specified angle
+	 * @param orientation
+	 * The new angle of orientation for this unit
+	 * @post
+	 * If the specified angle is a floating number between 0 and 2*PI, inclusivly,
+	 * the orientation of this unit will be changed to the specified angle
+	 */
+	private void setOrientation(float angle){
+		if( (angle >= 0) && (angle <=2*PI))
+			this.orientation = angle;
 }
 
