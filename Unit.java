@@ -89,6 +89,90 @@ public class Unit {
 		    cubeposition[i] = (int) this.position[i];
 		return cubeposition;
 	}
-
+	/**
+	 * Return the weight of this unit
+	 */
+	@Basic
+	public int getWeight(){
+		return this.weight;
+	}
+	/**
+	 * Set the weight of this unit to the given weight
+	 * 
+	 * @param weight
+	 * The new weight for this unit
+	 * @post
+	 * If the specified weight is a positive integer between 1 and 200, inclusivly,
+	 * and the given weight is equal or larger than 0.5 times the sum of the units strength and agility,
+	 * the new weight of this unit is equal to the given weight
+	 */
+	private void setWeight(int weight){
+		if( (weight >= 1) && (weight <=200) && (weight>=(0.5*this.getAgility()+this.getStrength())))
+			this.weight = weight;
+	}
+	
+	
+	/**
+	 * Return the strength of this unit
+	 */
+	@Basic
+	public int getStrength(){
+		return this.strength;
+	}
+	/**
+	 * Set the new strength of this unit to the given strength
+	 * @param strength
+	 * The new strength for this unit
+	 * @post
+	 * If the specified strength is a positive integer between 1 and 200, inclusivly,
+	 * and the given strength is smaller than the sum of two times the units weight and its agility,
+	 * the new strength of this unit is equal to the given strength
+	 */
+	private void setStrength(int strength){
+		if( (strength >= 1) && (strength <=200) && (strength<=(this.getAgility()+2*this.getWeight())))
+			this.weight = weight;
+	}
+	
+	
+	/**
+	 * Return the agility of this unit
+	 */
+	@Basic
+	public int getAgility(){
+		return this.agility;
+	}
+	/**
+	 * Set the new agility of this unit to the given agility
+	 * @param agility
+	 * The new agility for this unit
+	 * @post
+	 * If the specified agility is a positive integer between 1 and 200, inclusivly,
+	 * and the given agility is smaller than the sum of two times the units weight and its strength,
+	 * the new agility of this unit is equal to the given agility
+	 */
+	private void setAgility(int agility){
+		if( (agility >= 1) && (agility <=200) && (agility<=(this.getStrength()+2*this.getWeight())))
+			this.agility = agility;
+	}
+	
+	/**
+	 * Return the toughness of this unit
+	 */
+	@Basic
+	public int getToughness (){
+		return this.toughness;
+	}
+	/**
+	 * Set the new toughness of this unit to the given toughness
+	 * @param toughness
+	 * The new toughness for this unit
+	 * @post
+	 * If the specified toughness is a positive integer between 1 and 200, inclusivly,
+	 * the new agility of this unit is equal to the given agility
+	 */
+	private void setToughness(int toughness){
+		if( (toughness >= 1) && (toughness <=200))
+			this.toughness = toughness;
+	}
 }
 
