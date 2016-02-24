@@ -48,13 +48,13 @@ public class Unit {
 	 * Variable registering the lower bound for the x, y and z
 	 * dimensions of the generated world.
 	 */
-	public static int lowerbound = 0;
+	public static int lowerBound = 0;
 	
 	/**
 	 * Variable registering the upper bound for the x, y and z
 	 * dimensions of the generated world.
 	 */
-	public static int upperbound = 50;
+	public static int upperBound = 50;
 	
 	/**
 	 * Check whether the given position is a valid position for a unit.
