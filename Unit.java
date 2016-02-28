@@ -209,5 +209,28 @@ public class Unit {
 	private void setOrientation(float angle){
 		if( (angle >= 0) && (angle <=2*PI))
 			this.orientation = angle;
+	}
+	
+	/**
+	 * Update the position and activity status of a Unit,
+	 * based on that Unit's current postition, attributes and a given duration ∆t in seconds of game time.
+	 */
+	public void advanceTime(double duration) throws OutOfBoundsException {
+			if (!isValidDuration(duration))
+				throw new NonValidDurationException(duration);
+			/* updateStats() temporary*/
+	}
+	
+	/**
+	 * Check whether the given duration is a valid duration to advance the time.
+	 * @param 	duration
+	 * 			The duration to check.
+	 * @return	True if and only if the given duration is larger than or equal to zero, and always smaller than 0.2.
+	 */
+	public static boolean isValidDuration(double[] duration){
+			if ((duration < 0) || (duration >=0.2))
+				return false;
+		return true;
+	}
 }
 
