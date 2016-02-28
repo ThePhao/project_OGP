@@ -10,7 +10,7 @@ import be.kuleuven.cs.som.annotate.Raw;
  * @invar 	Each unit can have its position as position.
  * 			| isValidPosition(this.getPosition())
  * @invar  	Each unit can have its name as name.
- *       	| canHaveAsName(this.getName())
+ * 		   	| canHaveAsName(this.getName())
  *
  */
 public class Unit {
