@@ -1,9 +1,16 @@
 import be.kuleuven.cs.som.annotate.Basic;
+import be.kuleuven.cs.som.annotate.Immutable;
+import be.kuleuven.cs.som.annotate.Raw;
 
 /**
  * A class of Hillbilly units.
  * 
- * @author Joris Schrauwen, Wim Schmitz
+ * @author 	Joris Schrauwen, Wim Schmitz
+ * 
+ * @invar 	Each unit can have its position as position.
+ * 			| isValidPosition(this.getPosition())
+ * @invar  	Each unit can have its name as name.
+ *       	| canHaveAsName(this.getName())
  *
  */
 public class Unit {
@@ -26,23 +33,67 @@ public class Unit {
 	 * 			The toughness for this new unit.
 	 * @post	The position of this new unit is the given position.
 	 * 			| new.getPosition() == position
+	 * @post    The name of this new unit is equal to the given name.
+	 *        	| new.getName() == name
 	 * @throws	OutOfBoundsException
 	 * 			The given position is out of bounds.
 	 * 			| ! isValidPosition(position)
+	 * @throws  IllegalArgumentException
+	 *         	This new unit cannot have the given name as its name.
+	 *       	| ! canHaveAsName(this.getName())
 	 */
 	public Unit(double[] position, String name, int weight, int strength, 
-			int agility, int toughness) 
-					throws OutOfBoundsException {
+			int agility, int toughness, float orientation) 
+					throws OutOfBoundsException, IllegalArgumentException {
 		if (!isValidPosition(position))
 			throw new OutOfBoundsException(position);
 		
-		this.position = position;		
+		if (!canHaveAsName(name))
+			throw new IllegalArgumentException(name);
+		
+		this.position = position;	
+		this.name = name;
+		this.weight = weight;
+		this.strength = strength;
+		this.agility = agility;
+		this.toughness = toughness;
+		this.orientation = orientation;
 	}
 	
 	/**
 	 * Variable registering the position of this unit.
 	 */
 	private double[] position;
+	
+	/**
+	 * Variable registering the name of this unit.
+	 */
+	private String name;
+	
+	/**
+	 * Variable registering the weight of this unit.
+	 */
+	private int weight;
+	
+	/**
+	 * Variable registering the strength of this unit.
+	 */
+	private int strength;
+	
+	/**
+	 * Variable registering the agility of this unit.
+	 */
+	private int agility;
+	
+	/**
+	 * Variable registering the toughness of this unit.
+	 */
+	private int toughness;
+	
+	/**
+	 * Variable registering the orientation of this unit.
+	 */
+	private float orientation;
 	
 	/**
 	 * Variable registering the lower bound for the x, y and z
@@ -57,6 +108,14 @@ public class Unit {
 	public static int upperBound = 50;
 	
 	/**
+	 * Return the position of this unit.
+	 */
+	@Basic
+	public double[] getPosition(){
+		return this.position;
+	}
+	
+	/**
 	 * Check whether the given position is a valid position for a unit.
 	 * @param 	position
 	 * 			The position to check.
@@ -67,18 +126,37 @@ public class Unit {
 	 */
 	public static boolean isValidPosition(double[] position){
 		for (int i = 0; i < position.length;)
-			if ((position[i] < lowerbound) || (position[i] > upperbound))
+			if ((position[i] < lowerBound) || (position[i] > upperBound))
 				return false;
 		return true;
 	}
+		
+	/**
+	 * Return the name of this unit.
+	 */
+	@Basic @Raw @Immutable
+	public String getName() {
+		return this.name;
+	}
 	
 	/**
-	 * Return the position of this unit.
-	 */
-	@Basic
-	public double[] getPosition(){
-		return this.position;
+	 * Check whether this unit can have the given name as its name.
+	 *  
+	 * @param  name
+	 *         The name to check.
+	 * @return 
+	 *       | result == 
+	*/
+	@Raw
+	public boolean canHaveAsName(String name) {
+		if (name.length() < 2)
+			return false;
+		
+		char c = name[0];
+		else if 
+		return true;
 	}
+
 	
 	/**
 	 * Return the position of the cube occupied by this unit.
@@ -100,10 +178,11 @@ public class Unit {
 	 * Set the weight of this unit to the given weight
 	 * 
 	 * @param weight
-	 * 	  The new weight for this unit
-	 * @post  If the specified weight is a positive integer between 1 and 200, inclusivly,
-	 * 	  and the given weight is equal or larger than 0.5 times the sum of the units strength and agility,
-	 * 	  the new weight of this unit is equal to the given weight
+	 * The new weight for this unit
+	 * @post
+	 * If the specified weight is a positive integer between 1 and 200, inclusivly,
+	 * and the given weight is equal or larger than 0.5 times the sum of the units strength and agility,
+	 * the new weight of this unit is equal to the given weight
 	 */
 	private void setWeight(int weight){
 		if( (weight >= 1) && (weight <=200) && (weight>=(0.5*this.getAgility()+this.getStrength())))
@@ -120,16 +199,16 @@ public class Unit {
 	}
 	/**
 	 * Set the new strength of this unit to the given strength
-	 * 
 	 * @param strength
-	 * 	  The new strength for this unit
-	 * @post  If the specified strength is a positive integer between 1 and 200, inclusivly,
-	 * 	  and the given strength is smaller than the sum of two times the units weight and its agility,
-	 * 	  the new strength of this unit is equal to the given strength
+	 * The new strength for this unit
+	 * @post
+	 * If the specified strength is a positive integer between 1 and 200, inclusivly,
+	 * and the given strength is smaller than the sum of two times the units weight and its agility,
+	 * the new strength of this unit is equal to the given strength
 	 */
 	private void setStrength(int strength){
 		if( (strength >= 1) && (strength <=200) && (strength<=(this.getAgility()+2*this.getWeight())))
-			this.weight = weight;
+			this.strength = strength;
 	}
 	
 	
@@ -142,12 +221,12 @@ public class Unit {
 	}
 	/**
 	 * Set the new agility of this unit to the given agility
-	 * 
 	 * @param agility
-	 * 	  The new agility for this unit
-	 * @post  If the specified agility is a positive integer between 1 and 200, inclusivly,
-	 * 	  and the given agility is smaller than the sum of two times the units weight and its strength,
-	 * 	  the new agility of this unit is equal to the given agility
+	 * The new agility for this unit
+	 * @post
+	 * If the specified agility is a positive integer between 1 and 200, inclusively,
+	 * and the given agility is smaller than the sum of two times the units weight and its strength,
+	 * the new agility of this unit is equal to the given agility
 	 */
 	private void setAgility(int agility){
 		if( (agility >= 1) && (agility <=200) && (agility<=(this.getStrength()+2*this.getWeight())))
@@ -162,33 +241,16 @@ public class Unit {
 		return this.toughness;
 	}
 	/**
-	 * Set the new toughness of this unit to the given toughness.
-	 * 
+	 * Set the new toughness of this unit to the given toughness
 	 * @param toughness
-	 * 	  The new toughness for this unit
-	 * @post  If the specified toughness is a positive integer between 1 and 200, inclusivly,
-	 * 	  the new agility of this unit is equal to the given agility
+	 * The new toughness for this unit
+	 * @post
+	 * If the specified toughness is a positive integer between 1 and 200, inclusively,
+	 * the new agility of this unit is equal to the given agility
 	 */
 	private void setToughness(int toughness){
 		if( (toughness >= 1) && (toughness <=200))
 			this.toughness = toughness;
-	}
-	
-	
-	/**
-	 * Insepct the maximal number of hitpoints of this unit.
-	 */
-	@Basic @Immutable @Raw
-	public int getMaxHitpoints(){
-		return Math.ceil(this.getWeight()*this.getToughness()*0.02)
-	}
-	
-	/**
-	 * Insepct the maximal number of stamina of this unit.
-	 */
-	@Basic @Immutable @Raw
-	public int getMaxStamina(){
-		return Math.ceil(this.getWeight()*this.getToughness()*0.02)
 	}
 	
 	/**
@@ -200,37 +262,17 @@ public class Unit {
 	}
 	/**
 	 * Change the orientation of this unit to the specified angle
-	 * 
 	 * @param orientation
-	 * 	  The new angle of orientation for this unit
-	 * @post  If the specified angle is a floating number between 0 and 2*PI, inclusivly,
-	 * 	  the orientation of this unit will be changed to the specified angle
+	 * The new angle of orientation for this unit
+	 * @post
+	 * If the specified angle is a floating number between 0 and 2*PI, inclusively,
+	 * the orientation of this unit will be changed to the specified angle
 	 */
 	private void setOrientation(float angle){
-		if( (angle >= 0) && (angle <=2*PI))
+		if( (angle >= 0) && (angle <=2*Math.PI))
 			this.orientation = angle;
+		
 	}
-	
-	/**
-	 * Update the position and activity status of a Unit,
-	 * based on that Unit's current postition, attributes and a given duration ∆t in seconds of game time.
-	 */
-	public void advanceTime(double duration) throws NonValidDurationException {
-			if (!isValidDuration(duration))
-				throw new NonValidDurationException(duration);
-			/* updateStats() temporary*/
-	}
-	
-	/**
-	 * Check whether the given duration is a valid duration to advance the time.
-	 * @param 	duration
-	 * 			The duration to check.
-	 * @return	True if and only if the given duration is larger than or equal to zero, and always smaller than 0.2.
-	 */
-	public static boolean isValidDuration(double[] duration){
-			if ((duration < 0) || (duration >=0.2))
-				return false;
-		return true;
-	}
+
 }
 
