@@ -215,7 +215,7 @@ public class Unit {
 	 * Update the position and activity status of a Unit,
 	 * based on that Unit's current postition, attributes and a given duration ∆t in seconds of game time.
 	 */
-	public void advanceTime(double duration) throws OutOfBoundsException {
+	public void advanceTime(double duration) throws NonValidDurationException {
 			if (!isValidDuration(duration))
 				throw new NonValidDurationException(duration);
 			/* updateStats() temporary*/
