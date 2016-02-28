@@ -15,7 +15,7 @@ import be.kuleuven.cs.som.annotate.Raw;
  */
 public class Unit {
 	
-	/**
+/**
 	 * Initialize this new unit with given position, name, weight, 
 	 * strength, agility and toughness.
 	 * 
@@ -45,6 +45,7 @@ public class Unit {
 	public Unit(double[] position, String name, int weight, int strength, 
 			int agility, int toughness, float orientation) 
 					throws OutOfBoundsException, IllegalArgumentException {
+						
 		if (!isValidPosition(position))
 			throw new OutOfBoundsException(position);
 		
@@ -142,22 +143,31 @@ public class Unit {
 	/**
 	 * Check whether this unit can have the given name as its name.
 	 *  
-	 * @param  name
-	 *         The name to check.
-	 * @return 
-	 *       | result == 
+	 * @param   name
+	 *          The name to check.
+	 * @return  True if and only if the name uses 2 characters or more, 
+	 * 			the first letter is a capital one and all characters
+	 * 			are either letters, spaces or quotes.
+	 *       	| result == (name != null)
 	*/
 	@Raw
 	public boolean canHaveAsName(String name) {
-		if (name.length() < 2)
+		
+		if (name == null)
 			return false;
 		
-		char c = name[0];
-		else if 
+		char[] chars = name.toCharArray();
+		
+		if ((chars.length < 2) || (!Character.isUpperCase(chars[0])))
+			return false;
+		
+		for (char i : chars) 
+		        if ((!Character.isLetter(i)) && (i !=' ') && (i != '\''))
+		            return false;
+
 		return true;
 	}
 
-	
 	/**
 	 * Return the position of the cube occupied by this unit.
 	 */
@@ -167,6 +177,7 @@ public class Unit {
 		    cubeposition[i] = (int) this.position[i];
 		return cubeposition;
 	}
+	
 	/**
 	 * Return the weight of this unit
 	 */
@@ -174,6 +185,7 @@ public class Unit {
 	public int getWeight(){
 		return this.weight;
 	}
+	
 	/**
 	 * Set the weight of this unit to the given weight
 	 * 
@@ -189,7 +201,6 @@ public class Unit {
 			this.weight = weight;
 	}
 	
-	
 	/**
 	 * Return the strength of this unit
 	 */
@@ -197,6 +208,7 @@ public class Unit {
 	public int getStrength(){
 		return this.strength;
 	}
+	
 	/**
 	 * Set the new strength of this unit to the given strength
 	 * @param strength
@@ -211,7 +223,6 @@ public class Unit {
 			this.strength = strength;
 	}
 	
-	
 	/**
 	 * Return the agility of this unit
 	 */
@@ -219,6 +230,7 @@ public class Unit {
 	public int getAgility(){
 		return this.agility;
 	}
+	
 	/**
 	 * Set the new agility of this unit to the given agility
 	 * @param agility
@@ -240,6 +252,7 @@ public class Unit {
 	public int getToughness (){
 		return this.toughness;
 	}
+	
 	/**
 	 * Set the new toughness of this unit to the given toughness
 	 * @param toughness
@@ -252,9 +265,9 @@ public class Unit {
 		if( (toughness >= 1) && (toughness <=200))
 			this.toughness = toughness;
 	}
-		
+	
 	/**
-	 * Insepct the maximal number of hitpoints of this unit.
+	 * Insepct the maximal amount of hitpoints of this unit.
 	 */
 	@Basic @Immutable @Raw
 	public int getMaxHitpoints(){
@@ -262,7 +275,7 @@ public class Unit {
 	}
 	
 	/**
-	 * Insepct the maximal number of stamina of this unit.
+	 * Insepct the maximal amount of stamina of this unit.
 	 */
 	@Basic @Immutable @Raw
 	public int getMaxStamina(){
@@ -276,6 +289,7 @@ public class Unit {
 	public float getOrientation (){
 		return this.orientation;
 	}
+	
 	/**
 	 * Change the orientation of this unit to the specified angle
 	 * @param orientation
