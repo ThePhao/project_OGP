@@ -297,16 +297,29 @@ public class Unit {
 	public void advanceTime(double duration) throws NonValidDurationException {
 			if (!isValidDuration(duration))
 				throw new NonValidDurationException(duration);
-			/* updateStats() temporary*/
+			double velocity[] = this.getVelocity();
+			position[0] = position[0] + duration*velocity[0];
+			position[1] = position[1] + duration*velocity[1];
+			position[2] = position[2] + duration*velocity[2];
+					
 	}
 	
+	public int getVelocity(){
+		int basevel = 0.75*(this.getStrength()+this.getAgility())/this.getWeight();
+		if (position-targetPositon < 0)
+		sprintvel = 2 * walkvel
+		if (isSprinting == true)
+			return 1.50*(this.getStrength()+this.getAgility())/this.getWeight();
+		else
+			return 0.75*(this.getStrength()+this.getAgility())/this.getWeight();	
+	}
 	/**
 	 * Check whether the given duration is a valid duration to advance the time.
 	 * @param 	duration
 	 * 			The duration to check.
 	 * @return	True if and only if the given duration is larger than or equal to zero, and always smaller than 0.2.
 	 */
-	public static boolean isValidDuration(double[] duration){
+	public static boolean isValidDuration(double duration){
 			if ((duration < 0) || (duration >=0.2))
 				return false;
 		return true;
