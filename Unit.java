@@ -100,11 +100,10 @@ public class Unit {
 	 * Set the weight of this unit to the given weight
 	 * 
 	 * @param weight
-	 * The new weight for this unit
-	 * @post
-	 * If the specified weight is a positive integer between 1 and 200, inclusivly,
-	 * and the given weight is equal or larger than 0.5 times the sum of the units strength and agility,
-	 * the new weight of this unit is equal to the given weight
+	 * 	  The new weight for this unit
+	 * @post  If the specified weight is a positive integer between 1 and 200, inclusivly,
+	 * 	  and the given weight is equal or larger than 0.5 times the sum of the units strength and agility,
+	 * 	  the new weight of this unit is equal to the given weight
 	 */
 	private void setWeight(int weight){
 		if( (weight >= 1) && (weight <=200) && (weight>=(0.5*this.getAgility()+this.getStrength())))
@@ -121,12 +120,12 @@ public class Unit {
 	}
 	/**
 	 * Set the new strength of this unit to the given strength
+	 * 
 	 * @param strength
-	 * The new strength for this unit
-	 * @post
-	 * If the specified strength is a positive integer between 1 and 200, inclusivly,
-	 * and the given strength is smaller than the sum of two times the units weight and its agility,
-	 * the new strength of this unit is equal to the given strength
+	 * 	  The new strength for this unit
+	 * @post  If the specified strength is a positive integer between 1 and 200, inclusivly,
+	 * 	  and the given strength is smaller than the sum of two times the units weight and its agility,
+	 * 	  the new strength of this unit is equal to the given strength
 	 */
 	private void setStrength(int strength){
 		if( (strength >= 1) && (strength <=200) && (strength<=(this.getAgility()+2*this.getWeight())))
@@ -143,12 +142,12 @@ public class Unit {
 	}
 	/**
 	 * Set the new agility of this unit to the given agility
+	 * 
 	 * @param agility
-	 * The new agility for this unit
-	 * @post
-	 * If the specified agility is a positive integer between 1 and 200, inclusivly,
-	 * and the given agility is smaller than the sum of two times the units weight and its strength,
-	 * the new agility of this unit is equal to the given agility
+	 * 	  The new agility for this unit
+	 * @post  If the specified agility is a positive integer between 1 and 200, inclusivly,
+	 * 	  and the given agility is smaller than the sum of two times the units weight and its strength,
+	 * 	  the new agility of this unit is equal to the given agility
 	 */
 	private void setAgility(int agility){
 		if( (agility >= 1) && (agility <=200) && (agility<=(this.getStrength()+2*this.getWeight())))
@@ -163,16 +162,33 @@ public class Unit {
 		return this.toughness;
 	}
 	/**
-	 * Set the new toughness of this unit to the given toughness
+	 * Set the new toughness of this unit to the given toughness.
+	 * 
 	 * @param toughness
-	 * The new toughness for this unit
-	 * @post
-	 * If the specified toughness is a positive integer between 1 and 200, inclusivly,
-	 * the new agility of this unit is equal to the given agility
+	 * 	  The new toughness for this unit
+	 * @post  If the specified toughness is a positive integer between 1 and 200, inclusivly,
+	 * 	  the new agility of this unit is equal to the given agility
 	 */
 	private void setToughness(int toughness){
 		if( (toughness >= 1) && (toughness <=200))
 			this.toughness = toughness;
+	}
+	
+	
+	/**
+	 * Insepct the maximal number of hitpoints of this unit.
+	 */
+	@Basic @Immutable @Raw
+	public int getMaxHitpoints(){
+		return Math.ceil(this.getWeight()*this.getToughness()*0.02)
+	}
+	
+	/**
+	 * Insepct the maximal number of stamina of this unit.
+	 */
+	@Basic @Immutable @Raw
+	public int getMaxStamina(){
+		return Math.ceil(this.getWeight()*this.getToughness()*0.02)
 	}
 	
 	/**
@@ -184,11 +200,11 @@ public class Unit {
 	}
 	/**
 	 * Change the orientation of this unit to the specified angle
+	 * 
 	 * @param orientation
-	 * The new angle of orientation for this unit
-	 * @post
-	 * If the specified angle is a floating number between 0 and 2*PI, inclusivly,
-	 * the orientation of this unit will be changed to the specified angle
+	 * 	  The new angle of orientation for this unit
+	 * @post  If the specified angle is a floating number between 0 and 2*PI, inclusivly,
+	 * 	  the orientation of this unit will be changed to the specified angle
 	 */
 	private void setOrientation(float angle){
 		if( (angle >= 0) && (angle <=2*PI))
