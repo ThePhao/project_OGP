@@ -290,28 +290,55 @@ public class Unit {
 		
 	}
 	
-	/**
-	 * Update the position and activity status of a Unit,
+		/**
+	 * Update the position and status of a Unit,
 	 * based on that Unit's current postition, attributes and a given duration ∆t in seconds of game time.
 	 */
 	public void advanceTime(double duration) throws NonValidDurationException {
 			if (!isValidDuration(duration))
 				throw new NonValidDurationException(duration);
+			
 			double velocity[] = this.getVelocity();
 			position[0] = position[0] + duration*velocity[0];
 			position[1] = position[1] + duration*velocity[1];
 			position[2] = position[2] + duration*velocity[2];
-					
+			
+	}
+	/**
+	 * Calculate the Velocity of a Unit
+	 */
+	public int[] getVelocity(double startPos,double targetPos){
+		
+		int basevel = 0.75*(this.getStrength()+this.getAgility())/this.getWeight();
+		
+		if (startPos[2]-targetPos[2] > 0)
+			int walkvel = 1.2*basevel;
+		else if (startPos[2]-targetPos[2] < 0)
+			int walkvel = 0.5*basevel;
+		else
+			int walkvel = basevel;
+		
+		int dis = calcDistance(startPos,targetPos);
+		int[] walkvel = [(end[0]-start[0])/dis,(end[0]-start[0])/dis,(end[0]-start[0])/dis];
+		
+		if (this.isSprinting() == true)
+			int sprintvel = 2 * walkvel;
+			return sprintvel;
+		else
+			return walkvel;	
 	}
 	
-	public int getVelocity(){
-		int basevel = 0.75*(this.getStrength()+this.getAgility())/this.getWeight();
-		if (position-targetPositon < 0)
-		sprintvel = 2 * walkvel
-		if (isSprinting == true)
-			return 1.50*(this.getStrength()+this.getAgility())/this.getWeight();
-		else
-			return 0.75*(this.getStrength()+this.getAgility())/this.getWeight();	
+	/**
+	 * Calculate de distance between two points in the game world
+	 * @throws	OutOfBoundsException
+	 * 			The given position is out of bounds.
+	 * 			| ! isValidPosition(position)
+	 */
+	public int calcDistance(double[] start, double[] end) throws OutOfBoundsException{
+		if (!isValidPosition(position))
+			throw new OutOfBoundsException(position);
+		
+		return sqrt(Math.pow(end[0]-start[0],2)+Math.pow(end[1]-start[1],2)+Math.pow(end[2]-start[2],2))
 	}
 	/**
 	 * Check whether the given duration is a valid duration to advance the time.
@@ -324,5 +351,6 @@ public class Unit {
 				return false;
 		return true;
 	}
+
 }
 
