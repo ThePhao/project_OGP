@@ -10,12 +10,12 @@ import be.kuleuven.cs.som.annotate.Raw;
  * @invar 	Each unit can have its position as position.
  * 			| isValidPosition(this.getPosition())
  * @invar  	Each unit can have its name as name.
- * 		   	| canHaveAsName(this.getName())
+ *       	| canHaveAsName(this.getName())
  *
  */
 public class Unit {
 	
-/**
+	/**
 	 * Initialize this new unit with given position, name, weight, 
 	 * strength, agility and toughness.
 	 * 
@@ -45,7 +45,7 @@ public class Unit {
 	public Unit(double[] position, String name, int weight, int strength, 
 			int agility, int toughness, float orientation) 
 					throws OutOfBoundsException, IllegalArgumentException {
-						
+		
 		if (!isValidPosition(position))
 			throw new OutOfBoundsException(position);
 		
@@ -54,11 +54,11 @@ public class Unit {
 		
 		this.position = position;	
 		this.name = name;
-		this.weight = weight;
-		this.strength = strength;
-		this.agility = agility;
-		this.toughness = toughness;
-		this.orientation = orientation;
+		this.setWeight(weight);
+		this.setStrength(strength);
+		this.setAgility(agility);
+		this.setToughness(toughness);
+		this.setOrientation(orientation);
 	}
 	
 	/**
@@ -123,7 +123,7 @@ public class Unit {
 	 * @return	True if and only if all doubles of the given position
 	 * 			are larger than or equal to the lowerbound and smaller 
 	 * 			than or equal to the upperbound.
-	 * 			result == (
+	 * 			| result == (
 	 */
 	public static boolean isValidPosition(double[] position){
 		for (int i = 0; i < position.length;)
@@ -162,12 +162,13 @@ public class Unit {
 			return false;
 		
 		for (char i : chars) 
-		        if ((!Character.isLetter(i)) && (i !=' ') && (i != '\''))
-		            return false;
+	        if ((!Character.isLetter(i)) && (i !=' ') && (i != '\''))
+	            return false;
 
 		return true;
 	}
 
+	
 	/**
 	 * Return the position of the cube occupied by this unit.
 	 */
@@ -192,7 +193,7 @@ public class Unit {
 	 * @param weight
 	 * The new weight for this unit
 	 * @post
-	 * If the specified weight is a positive integer between 1 and 200, inclusivly,
+	 * If the specified weight is a positive integer between 1 and 200, inclusively,
 	 * and the given weight is equal or larger than 0.5 times the sum of the units strength and agility,
 	 * the new weight of this unit is equal to the given weight
 	 */
@@ -200,6 +201,7 @@ public class Unit {
 		if( (weight >= 1) && (weight <=200) && (weight>=(0.5*this.getAgility()+this.getStrength())))
 			this.weight = weight;
 	}
+	
 	
 	/**
 	 * Return the strength of this unit
@@ -214,7 +216,7 @@ public class Unit {
 	 * @param strength
 	 * The new strength for this unit
 	 * @post
-	 * If the specified strength is a positive integer between 1 and 200, inclusivly,
+	 * If the specified strength is a positive integer between 1 and 200, inclusively,
 	 * and the given strength is smaller than the sum of two times the units weight and its agility,
 	 * the new strength of this unit is equal to the given strength
 	 */
@@ -222,6 +224,7 @@ public class Unit {
 		if( (strength >= 1) && (strength <=200) && (strength<=(this.getAgility()+2*this.getWeight())))
 			this.strength = strength;
 	}
+	
 	
 	/**
 	 * Return the agility of this unit
@@ -267,22 +270,6 @@ public class Unit {
 	}
 	
 	/**
-	 * Insepct the maximal amount of hitpoints of this unit.
-	 */
-	@Basic @Immutable @Raw
-	public int getMaxHitpoints(){
-		return Math.ceil(this.getWeight()*this.getToughness()*0.02)
-	}
-	
-	/**
-	 * Insepct the maximal amount of stamina of this unit.
-	 */
-	@Basic @Immutable @Raw
-	public int getMaxStamina(){
-		return Math.ceil(this.getWeight()*this.getToughness()*0.02)
-	}
-	
-	/**
 	 * inspect the current orientation of this unit
 	 */
 	@Basic
@@ -303,27 +290,6 @@ public class Unit {
 			this.orientation = angle;
 		
 	}
-	
-	/**
-	 * Update the position and activity status of a Unit,
-	 * based on that Unit's current postition, attributes and a given duration ∆t in seconds of game time.
-	 */
-	public void advanceTime(double duration) throws NonValidDurationException {
-			if (!isValidDuration(duration))
-				throw new NonValidDurationException(duration);
-			/* updateStats() temporary*/
-	}
-	
-	/**
-	 * Check whether the given duration is a valid duration to advance the time.
-	 * @param 	duration
-	 * 			The duration to check.
-	 * @return	True if and only if the given duration is larger than or equal to zero, and always smaller than 0.2.
-	 */
-	public static boolean isValidDuration(double[] duration){
-			if ((duration < 0) || (duration >=0.2))
-				return false;
-		return true;
-	}
+
 }
 
