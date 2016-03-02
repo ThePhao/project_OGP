@@ -45,22 +45,33 @@ public class Unit {
 	 *       	| ! canHaveAsName(this.getName())
 	 */
 	public Unit(double[] position, String name, int weight, int strength, 
-			int agility, int toughness, float orientation) 
+			int agility, int toughness) 
 					throws OutOfBoundsException, IllegalArgumentException {
 						
 		if (!isValidPosition(position))
-			throw new OutOfBoundsException(position);
+			throw new OutOfBoundsException();
 		
 		if (!canHaveAsName(name))
 			throw new IllegalArgumentException(name);
 		
 		this.position = position;	
 		this.name = name;
-		this.weight = weight;
-		this.strength = strength;
-		this.agility = agility;
-		this.toughness = toughness;
-		this.orientation = orientation;
+		
+		if (isWithinRange(strength))		
+			this.setStrength(strength);
+		
+		if (isWithinRange(agility))
+			this.setAgility(agility);
+		
+		if (isWithinRange(toughness))
+			this.setToughness(toughness);
+		
+		if (isWithinRange(weight))
+			this.setWeight(weight);
+		
+		this.orientation = (float) Math.PI/2;
+		this.stamina = getMaxStamina();
+		this.hitpoints = getMaxHitpoints();
 	}
 	
 	/**
@@ -99,6 +110,16 @@ public class Unit {
 	private float orientation;
 	
 	/**
+	 * Variable registering the stamina of this unit.
+	 */
+	private int stamina;
+	
+	/**
+	 * Variable registering the hitpoints of this unit.
+	 */
+	private int hitpoints;
+	
+	/**
 	 * Variable registering the lower bound for the x, y and z
 	 * dimensions of the generated world.
 	 */
@@ -129,7 +150,7 @@ public class Unit {
 	 *			| 				((position[i] > LOWER_BOUND) && 
 	 *			|					(position[i] < UPPER_BOUND)))
 	 */
-	public static boolean isValidPosition(double[] position){
+	public boolean isValidPosition(double[] position){
 		for (int i = 0; i < position.length;)
 			if ((position[i] < LOWER_BOUND) || (position[i] > UPPER_BOUND))
 				return false;
@@ -171,6 +192,10 @@ public class Unit {
 		            return false;
 
 		return true;
+	}
+	
+	public boolean isWithinRange(int value) {
+		return ((value >= 25) && (value <= 100));
 	}
 
 	/**
@@ -300,93 +325,148 @@ public class Unit {
 	}
 	
 	/**
-	 * Inspect the maximal amount of hitpoints of this unit.
-	 */
-	@Basic @Immutable @Raw
-	public int getMaxHitpoints(){
-		return Math.ceil(this.getWeight()*this.getToughness()*0.02)
-	}
-	
-	/**
-	 * Insepct the maximal amount of stamina of this unit.
-	 */
-	@Basic @Immutable @Raw
-	public int getMaxStamina(){
-		return Math.ceil(this.getWeight()*this.getToughness()*0.02)
-	}
-	
-	/**
-	 * inspect the current orientation of this unit
+	 * Inspect the current orientation of this unit.
 	 */
 	@Basic
 	public float getOrientation (){
 		return this.orientation;
 	}
-	
+
 	/**
-	 * Change the orientation of this unit to the specified angle
-	 * @param orientation
-	 * The new angle of orientation for this unit
-	 * @post
-	 * If the specified angle is a floating number between 0 and 2*PI, inclusively,
-	 * the orientation of this unit will be changed to the specified angle
+	 * Change the orientation of this unit to the specified angle.
+	 * @param  	orientation
+	 * 			The new angle of orientation for this unit.
+	 * @post	If the specified angle is a double precision number between 0 and 2*PI, inclusively,
+	 * 			the orientation of this unit will be changed to the specified angle.
 	 */
 	private void setOrientation(float angle){
-		if( (angle >= 0) && (angle <=2*Math.PI))
+		if( (angle >= 0) && (angle <= (float) 2*Math.PI))
 			this.orientation = angle;
 		
 	}
+
+	/**
+	 * Return the current amount of hitpoints of this unit.
+	 */
+	public int getHitpoints() {
+		return this.hitpoints;
+	}
 	
-		/**
+	/**
+	 * Inspect the maximal amount of hitpoints of this unit.
+	 */
+	@Basic @Immutable @Raw
+	public int getMaxHitpoints(){
+		return (int) Math.ceil(this.getWeight()*this.getToughness()* 0.02);
+	}
+
+	public void setHitpoints(int hitpoints){
+		if ((hitpoints >= 0) && (hitpoints <= this.getMaxHitpoints()))
+			this.hitpoints = hitpoints;
+	}
+	
+	/**
+	 * Return the current amount of stamina of this unit.
+	 */
+	public int getStamina() {
+		return this.stamina;
+	}
+	
+	/**
+	 * Inspect the maximal amount of stamina of this unit.
+	 */
+	@Basic @Immutable @Raw
+	public int getMaxStamina(){
+		return (int) Math.ceil(this.getWeight()*this.getToughness()* 0.02);
+	}
+
+	/**
+	 * Set the current stamina of this unit to the given value.
+	 * @param stamina
+	 */
+	public void setStamina(int stamina) {
+		if ((stamina >= 0) && (stamina <= this.getMaxStamina()))
+			this.stamina = stamina;		
+	}
+	
+	/**
 	 * Update the position and status of a Unit,
-	 * based on that Unit's current postition, attributes and a given duration ∆t in seconds of game time.
+	 * based on that Unit's current position, attributes and a given duration ∆t in seconds of game time.
 	 */
-	public void advanceTime(double duration) throws NonValidDurationException {
+	public void advanceTime(double duration, String status) throws NotValidDurationException {
 			if (!isValidDuration(duration))
-				throw new NonValidDurationException(duration);
+				throw new NotValidDurationException(duration);
 			
-			double velocity[] = this.getVelocity();
-			position[0] = position[0] + duration*velocity[0];
-			position[1] = position[1] + duration*velocity[1];
-			position[2] = position[2] + duration*velocity[2];
+			if (status == "Moving")
+				
+				double velocity[] = this.getVelocity();
+				this.position[0] = this.position[0] + duration*velocity[0];
+				this.position[1] = this.position[1] + duration*velocity[1];
+				this.position[2] = this.position[2] + duration*velocity[2];
 			
-	}
-	/**
-	 * Calculate the Velocity of a Unit
-	 */
-	public int[] getVelocity(double startPos,double targetPos){
-		
-		int basevel = 0.75*(this.getStrength()+this.getAgility())/this.getWeight();
-		
-		if (startPos[2]-targetPos[2] > 0)
-			int walkvel = 1.2*basevel;
-		else if (startPos[2]-targetPos[2] < 0)
-			int walkvel = 0.5*basevel;
-		else
-			int walkvel = basevel;
-		
-		int dis = calcDistance(startPos,targetPos);
-		int[] walkvel = [(end[0]-start[0])/dis,(end[0]-start[0])/dis,(end[0]-start[0])/dis];
-		
-		if (this.isSprinting() == true)
-			int sprintvel = 2 * walkvel;
-			return sprintvel;
-		else
-			return walkvel;	
+			if (status == "Resting")
+				...
+				
+			if (status == "Attacking")
+				...
+			
+			if (status == 'Working')
+				...
+			
 	}
 	
 	/**
-	 * Calculate de distance between two points in the game world
+	 * Constant reflecting the length of any side of a cube of the game world.
+	 * 
+	 * @return 	The length of all sides of all cubes of the game world is 1.
+	 * 			| result == 1
+	 */
+	public static final int CUBE_LENGTH = 1;
+	
+	/**
+	 * Calculate the Velocity of a Unit.
+	 */
+	public double[] getVelocity(double[] startPos,double[] targetPos){
+		
+		double basevel = 0.75*(this.getStrength()+this.getAgility())/this.getWeight();	
+		double walkvel;
+
+		if (startPos[2]-targetPos[2] > 0)
+			walkvel = 1.2*basevel;
+		else if (startPos[2]-targetPos[2] < 0)
+			walkvel = 0.5*basevel;
+		else
+			walkvel = basevel;
+		
+		double sprintvel = 2 * walkvel;
+		
+		double dis = calcDistance(startPos,targetPos);
+		double [] velocity = {(targetPos[0]-startPos[0])/dis,
+								(targetPos[0]-startPos[0])/dis,
+								(targetPos[0]-startPos[0])/dis};
+		
+		if (this.isSprinting())
+			for (int i=0; i < velocity.length;)
+				velocity[i] = velocity[i] * sprintvel;
+		else
+			for (int i=0; i< velocity.length;)
+				velocity[i]= velocity[i] * walkvel;
+		return velocity;
+	}
+	
+	/**
+	 * Calculate the distance between two points in the game world
 	 * @throws	OutOfBoundsException
 	 * 			The given position is out of bounds.
 	 * 			| ! isValidPosition(position)
 	 */
-	public int calcDistance(double[] start, double[] end) throws OutOfBoundsException{
-		if (!isValidPosition(position))
-			throw new OutOfBoundsException(position);
+	public double calcDistance(double[] start, double[] end) throws OutOfBoundsException{
+		if ((!isValidPosition(start)) || (!isValidPosition(end)))
+			throw new OutOfBoundsException();
 		
-		return sqrt(Math.pow(end[0]-start[0],2)+Math.pow(end[1]-start[1],2)+Math.pow(end[2]-start[2],2))
+		return Math.sqrt(Math.pow(end[0]-start[0],2)+Math.pow(end[1]-start[1],2)+Math.pow(end[2]-start[2],2));
 	}
+	
 	/**
 	 * Check whether the given duration is a valid duration to advance the time.
 	 * @param 	duration
@@ -398,6 +478,11 @@ public class Unit {
 				return false;
 		return true;
 	}
-
+	
+	public void moveToAdjacent(){
+		double[] speed = this.getVelocity(startPos, targetPos);
+		float vy = (float) speed[1];
+		float vx = (float) speed[0];
+		this.setOrientation((float) Math.atan2(vy, vx));
+	}
 }
-
