@@ -360,11 +360,15 @@ public class Unit {
 		return (int) Math.ceil(this.getWeight()*this.getToughness()* 0.02);
 	}
 
-	public void setHitpoints(int hitpoints){
+	private void setHitpoints(int hitpoints){
 		if ((hitpoints >= 0) && (hitpoints <= this.getMaxHitpoints()))
 			this.hitpoints = hitpoints;
 	}
 	
+	private void setStamina(int stamina){
+		if ((stamina >= 0) && (stamina <= this.getMaxHitpoints()))
+			this.stamina = stamina;
+	}
 	/**
 	 * Return the current amount of stamina of this unit.
 	 */
@@ -391,7 +395,7 @@ public class Unit {
 	
 	/**
 	 * Update the position and status of a Unit,
-	 * based on that Unit's current position, attributes and a given duration ∆t in seconds of game time.
+	 * based on that Unit's current position, attributes and a given duration âˆ†t in seconds of game time.
 	 */
 	public void advanceTime(double duration, String status) throws NotValidDurationException {
 			if (!isValidDuration(duration))
@@ -405,7 +409,8 @@ public class Unit {
 				this.position[2] = this.position[2] + duration*velocity[2];
 			
 			if (status == "Resting")
-				...
+				
+				this.restore(duration)
 				
 			if (status == "Attacking")
 				...
@@ -413,6 +418,48 @@ public class Unit {
 			if (status == 'Working')
 				...
 			
+	}
+	/**
+	 * Set the units current status to the specified activity.
+	 * 
+	 * @post The units activity is changed to the givenactivity
+	 */
+	private void setStatus(String activity){
+		this.status=activity
+	}
+	/**
+	 * This method will initiate resting
+	 * 
+	 * @post The units current status will be resting
+	 */
+	public void rest(){
+		this.setStatus("Resting");
+	}
+	/**
+	 * Restore hitpoints and stamina of a unit, when it is resting.
+	 * 
+	 * @post The units hitpoints will be replenished with ...
+	 * 		 If the maximum hitpoints is reached, the units stamina will be replenished with ...
+	 */
+	public void restore(double duration){
+		hitpointsCurrent = this.getHitpoints();
+		staminaCurrent = this.getStamina();
+		toughness = this.getToughness();
+		hitpointsMax = this.getMaxHitpoints();
+		staminaMax = this.getMaxStamina();
+		
+		hitpointsUpdated = hitpointsCurrent+duration*toughness/40;
+		staminaUpdated = staminaCurrent+duration*toughness/20;
+		
+		if(hitpointsUpdated<hitpointsMax)
+			this.setHitpoints(hitpointsUpdated);
+		else 
+			this.setHitpoints(hitpointsMax);
+		
+			if(staminaUpdated<staminaMax)
+				this.setStamina(staminaUpdtaed);
+			else
+				this.setStamina(staminaMax);	
 	}
 	
 	/**
@@ -482,11 +529,11 @@ public class Unit {
 	/**
 	 * Initiate movement to a game world cube adjacent to the unit's current location.
 	 * @param 	x
-	 * 			The x-coördinate to which the unit has to move.
+	 * 			The x-coÃ¶rdinate to which the unit has to move.
 	 * @param 	y
-	 * 			The y coördinate to which the unit has to move.
+	 * 			The y coÃ¶rdinate to which the unit has to move.
 	 * @param 	z
-	 * 			The z coördinate to which the unit has to move.
+	 * 			The z coÃ¶rdinate to which the unit has to move.
 	 */
 	public void moveToAdjacent(double x, double y, double z){
 		double[] targetPos = {x, y, z};
