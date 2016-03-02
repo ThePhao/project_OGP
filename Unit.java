@@ -479,10 +479,30 @@ public class Unit {
 		return true;
 	}
 	
-	public void moveToAdjacent(){
-		double[] speed = this.getVelocity(startPos, targetPos);
+	/**
+	 * Initiate movement to a game world cube adjacent to the unit's current location.
+	 * @param 	x
+	 * 			The x-coördinate to which the unit has to move.
+	 * @param 	y
+	 * 			The y coördinate to which the unit has to move.
+	 * @param 	z
+	 * 			The z coördinate to which the unit has to move.
+	 */
+	public void moveToAdjacent(double x, double y, double z){
+		double[] targetPos = {x, y, z};
+		double[] speed = this.getVelocity(this.getPosition(), targetPos);
 		float vy = (float) speed[1];
 		float vx = (float) speed[0];
 		this.setOrientation((float) Math.atan2(vy, vx));
+	}
+	
+	/**
+	 * Initiate a more complex movement from the unit's current position to another
+	 * arbitrary gameworld cube
+	 * @param 	location
+	 * 			The new location to which the unit has to move.
+	 */
+	public void moveTo(double[] location){
+		
 	}
 }
