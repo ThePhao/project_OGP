@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 import be.kuleuven.cs.som.annotate.Basic;
 import be.kuleuven.cs.som.annotate.Immutable;
 import be.kuleuven.cs.som.annotate.Raw;
@@ -70,8 +72,11 @@ public class Unit {
 			this.setWeight(weight);
 		
 		this.orientation = (float) Math.PI/2;
-		this.stamina = getMaxStamina();
+		this.stamina = getMaxHitpoints();
 		this.hitpoints = getMaxHitpoints();
+		this.status = "Default";
+		this.interrupted = false;
+		this.movement = "Still";
 	}
 	
 	/**
@@ -120,6 +125,21 @@ public class Unit {
 	private int hitpoints;
 	
 	/**
+	 * Variable registering the status of this unit.
+	 */
+	private String status;
+	
+	/*
+	 * Variable registering the unit's movement status.
+	 */
+	private String movement;
+	
+	/*
+	 * Variable registering whether the unit's behavior is being interrupted.
+	 */
+	private boolean interrupted;
+	
+	/**
 	 * Variable registering the lower bound for the x, y and z
 	 * dimensions of the generated world.
 	 */
@@ -155,6 +175,11 @@ public class Unit {
 			if ((position[i] < LOWER_BOUND) || (position[i] > UPPER_BOUND))
 				return false;
 		return true;
+	}
+	
+	private void setPosition(double[] newPos) {
+		if (isValidPosition(newPos))
+			this.position = newPos;
 	}
 		
 	/**
@@ -359,10 +384,20 @@ public class Unit {
 	public int getMaxHitpoints(){
 		return (int) Math.ceil(this.getWeight()*this.getToughness()* 0.02);
 	}
+	
+	public int getMinHitpoints(){
+		return 0;
+	}
 
-	public void setHitpoints(int hitpoints){
-		if ((hitpoints >= 0) && (hitpoints <= this.getMaxHitpoints()))
+	private void setHitpoints(int hitpoints){
+		if ((hitpoints >= getMinHitpoints()) && (hitpoints <= this.getMaxHitpoints()))
 			this.hitpoints = hitpoints;
+		
+		else if (hitpoints > this.getMaxHitpoints())
+			this.hitpoints = this.getMaxHitpoints();
+		
+		else if (hitpoints < getMinHitpoints())
+			this.hitpoints = getMinHitpoints();
 	}
 	
 	/**
@@ -372,47 +407,86 @@ public class Unit {
 		return this.stamina;
 	}
 	
-	/**
-	 * Inspect the maximal amount of stamina of this unit.
-	 */
-	@Basic @Immutable @Raw
-	public int getMaxStamina(){
-		return (int) Math.ceil(this.getWeight()*this.getToughness()* 0.02);
+	private void setStamina(int stamina){
+		if ((stamina >= 0) && (stamina <= this.getMaxHitpoints()))
+			this.stamina = stamina;
+		
+		else if (stamina > this.getMaxHitpoints())
+			this.stamina = this.getMaxHitpoints();
+		
+		else if (stamina < getMinHitpoints())
+			this.stamina = getMinHitpoints();
 	}
 
 	/**
-	 * Set the current stamina of this unit to the given value.
-	 * @param stamina
+	 * Return the current status of this unit.
 	 */
-	public void setStamina(int stamina) {
-		if ((stamina >= 0) && (stamina <= this.getMaxStamina()))
-			this.stamina = stamina;		
+	private String getStatus(){
+		return this.status;
+	}
+
+	/**
+	 * Set the units current status to the specified activity.
+	 * 
+	 * @post The units activity is changed to the given activity.
+	 */
+	private void setStatus(String activity){
+		this.status= activity;
+	}
+
+	/**
+	 * Update the position and status of a Unit,
+	 * based on that Unit's current position, attributes and a given duration âˆ†t in seconds of game time.
+	 */
+	public void advanceTime(double duration, double[] speed, String status) throws NotValidDurationException {
+			if (!isValidDuration(duration))
+				throw new NotValidDurationException(duration);
+			this.setStatus(status);
+			
+			double[] oldPos = this.getPosition();				
+			double[] newPos = { oldPos[0] + (duration * speed[0]),
+								oldPos[1] + (duration * speed[1]),
+								oldPos[2] + (duration * speed[2])};
+			
+			this.setPosition(newPos);
+			
+		//	if (this.getStatus() == "Resting")				
+		//		this.restore(duration);					
 	}
 	
 	/**
-	 * Update the position and status of a Unit,
-	 * based on that Unit's current position, attributes and a given duration ∆t in seconds of game time.
+	 * This method will initiate resting
+	 * 
+	 * @post The units current status will be resting
 	 */
-	public void advanceTime(double duration, String status) throws NotValidDurationException {
-			if (!isValidDuration(duration))
-				throw new NotValidDurationException(duration);
-			
-			if (status == "Moving")
-				
-				double velocity[] = this.getVelocity();
-				this.position[0] = this.position[0] + duration*velocity[0];
-				this.position[1] = this.position[1] + duration*velocity[1];
-				this.position[2] = this.position[2] + duration*velocity[2];
-			
-			if (status == "Resting")
-				...
-				
-			if (status == "Attacking")
-				...
-			
-			if (status == 'Working')
-				...
-			
+	public void rest(){
+		this.setStatus("Resting");
+	}
+	/**
+	 * Restore hitpoints and stamina of a unit, when it is resting.
+	 * 
+	 * @post The units hitpoints will be replenished with ...
+	 * 		 If the maximum hitpoints is reached, the units stamina will be replenished with ...
+	 */
+	public void restore(double duration) throws NotValidDurationException {
+		if ((duration * toughness / 20) < 1) 
+			throw new NotValidDurationException(duration);
+		
+		if (this.isInterrupted())
+			this.setStatus("Fighting");
+		
+		int toughness = this.getToughness();
+		int maxHitpoints = this.getMaxHitpoints();
+
+		if (this.getHitpoints() == maxHitpoints)
+			if (this.getStamina() == maxHitpoints)
+				this.setStatus("Default");
+		
+			else
+				this.setStamina((int) (this.getStamina() + (duration * toughness / 20)));
+		
+		else		
+			this.setHitpoints((int) (this.getHitpoints() + (duration * toughness / 40)));
 	}
 	
 	/**
@@ -449,7 +523,7 @@ public class Unit {
 			for (int i=0; i < velocity.length;)
 				velocity[i] = velocity[i] * sprintvel;
 		else
-			for (int i=0; i< velocity.length;)
+			for (int i=0; i < velocity.length;)
 				velocity[i]= velocity[i] * walkvel;
 		return velocity;
 	}
@@ -482,14 +556,14 @@ public class Unit {
 	/**
 	 * Initiate movement to a game world cube adjacent to the unit's current location.
 	 * @param 	x
-	 * 			The x-coördinate to which the unit has to move.
+	 * 			The x-coÃ¶rdinate to which the unit has to move.
 	 * @param 	y
-	 * 			The y coördinate to which the unit has to move.
+	 * 			The y coÃ¶rdinate to which the unit has to move.
 	 * @param 	z
-	 * 			The z coördinate to which the unit has to move.
+	 * 			The z coÃ¶rdinate to which the unit has to move.
 	 */
-	public void moveToAdjacent(double x, double y, double z){
-		double[] targetPos = {x, y, z};
+	public void moveToAdjacent(double[] targetPos){
+
 		double[] speed = this.getVelocity(this.getPosition(), targetPos);
 		float vy = (float) speed[1];
 		float vx = (float) speed[0];
@@ -498,11 +572,45 @@ public class Unit {
 	
 	/**
 	 * Initiate a more complex movement from the unit's current position to another
-	 * arbitrary gameworld cube
+	 * arbitrary cube of the game world.
 	 * @param 	location
 	 * 			The new location to which the unit has to move.
 	 */
 	public void moveTo(double[] location){
+		double[] nextPos = new double[3];
 		
+		while (!Arrays.equals(location, this.getPosition()))
+			if (!this.isInterrupted()){
+				for (int i = 0; i < nextPos.length;) {
+					
+					if (position[i] == location[i])
+						nextPos[i] = 0;
+					else if (position[i] < location[i])
+						nextPos[i] = 1;
+					else
+						nextPos[i] = -1;
+				}
+				this.moveToAdjacent(nextPos);
+			}
+			else
+				this.setStatus("Resting");
+				
+
+	}
+	
+	public boolean isInterrupted() {
+		return this.interrupted;
+	}
+	
+	public void setInterruption(boolean flag){
+		this.interrupted = flag;
+	}
+	
+	public String getMovementStatus() {
+		return this.movement;
+	}
+	
+	public boolean isSprinting(){
+		return this.getMovementStatus() == "Sprinting";
 	}
 }
