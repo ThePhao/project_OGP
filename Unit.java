@@ -436,12 +436,12 @@ public class Unit {
 
 	/**
 	 * Update the position and status of a Unit,
-	 * based on that Unit's current position, attributes and a given duration âˆ†t in seconds of game time.
+	 * based on that Unit's current position, attributes and a given duration Ã¢Ë†â€ t in seconds of game time.
 	 */
 	public void advanceTime(double duration, double[] speed, String status) throws NotValidDurationException {
 			if (!isValidDuration(duration))
 				throw new NotValidDurationException(duration);
-			this.setStatus(status);
+			this.setStatus("Moving");
 			
 			double[] oldPos = this.getPosition();				
 			double[] newPos = { oldPos[0] + (duration * speed[0]),
@@ -454,6 +454,61 @@ public class Unit {
 		//		this.restore(duration);					
 	}
 	
+
+	public void advanceTime(double duration,Unit defender){
+		defender.setStatus("Fighting");
+		this.setStatus("Fighting");
+		wait(duration);
+	}
+	
+	public void advanceTime(double duration){
+		this.setStatus("Resting");
+		this.restore(duration);
+		wait(duration);
+	}
+	
+	
+	public static String getRandomActivity(String[] activities) {
+	    int rnd = new Random().nextInt(activities.length);
+	    return array[rnd];
+	}
+	
+	public void attack(Unit defender){
+		float attackerOr = (float)Math.atan2(defender.getPosition()[1]-this.getPosition()[1],defender.getPosition()[0]-this.getPosition()[0]);
+		float defenderOr = (float)Math.atan2(this.getPosition()[1]-defender.getPosition()[1],this.getPosition()[0]-defender.getPosition()[0]);
+		
+		this.setOrientation(attackerOr);
+		defender.setOrientation(defenderOr);
+		
+		for(int i=1; i<5; i++)
+			this.advanceTime(0.2);
+		
+		double dodgeProb = 0.2*defender.getAgility()/this.getAgility();
+		boolean dodged = (new Random().nextDouble() <= dodgeProb);
+		
+		if (dodged == true){
+			pos = defender.getPosition();
+			addition = [0,0,0]
+			for(int i=0; i<2; i++){
+				
+				double plus = new Random().nextDouble();
+				double randomValue = -1 + 2 * plus;
+				evasion[i]= randomValue
+			}
+			double[] newPos = pos + addition
+			defender.setPosition(newPos);
+		}
+		
+		else{
+			double blockProb = 0.25*(defender.getStrength()-defender.getAgility())/(this.getStrength()-this.getAgility());
+			boolean blocked = (new Random().nextDouble() <= blockProb);
+			if (blocked != true){
+				double curHealth = defender.getHitpoints();
+				double damage = this.getStrength()/10;
+				defender.setHitpoints(curHealth-damage);
+			}
+		}
+	}
 	/**
 	 * This method will initiate resting
 	 * 
@@ -556,11 +611,11 @@ public class Unit {
 	/**
 	 * Initiate movement to a game world cube adjacent to the unit's current location.
 	 * @param 	x
-	 * 			The x-coÃ¶rdinate to which the unit has to move.
+	 * 			The x-coÃƒÂ¶rdinate to which the unit has to move.
 	 * @param 	y
-	 * 			The y coÃ¶rdinate to which the unit has to move.
+	 * 			The y coÃƒÂ¶rdinate to which the unit has to move.
 	 * @param 	z
-	 * 			The z coÃ¶rdinate to which the unit has to move.
+	 * 			The z coÃƒÂ¶rdinate to which the unit has to move.
 	 */
 	public void moveToAdjacent(double[] targetPos){
 
