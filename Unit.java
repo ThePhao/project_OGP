@@ -454,6 +454,12 @@ public class Unit {
 		//		this.restore(duration);					
 	}
 	
+	public void advanceTime(float time) throws NotValidDurationException {
+		if (!isValidDuration(time))
+			throw new NotValidDurationException(time);
+		
+	}
+	
 	/**
 	 * This method will initiate resting
 	 * 
@@ -563,11 +569,13 @@ public class Unit {
 	 * 			The z coÃ¶rdinate to which the unit has to move.
 	 */
 	public void moveToAdjacent(double[] targetPos){
-
-		double[] speed = this.getVelocity(this.getPosition(), targetPos);
-		float vy = (float) speed[1];
-		float vx = (float) speed[0];
-		this.setOrientation((float) Math.atan2(vy, vx));
+		if (!this.isMoving()) {
+			double[] speed = this.getVelocity(this.getPosition(), targetPos);
+			float vy = (float) speed[1];
+			float vx = (float) speed[0];
+			this.setOrientation((float) Math.atan2(vy, vx));
+			this.advanceTime(duration, speed, status);
+			}
 	}
 	
 	/**
@@ -583,9 +591,9 @@ public class Unit {
 			if (!this.isInterrupted()){
 				for (int i = 0; i < nextPos.length;) {
 					
-					if (position[i] == location[i])
+					if (this.getPosition()[i] == location[i])
 						nextPos[i] = 0;
-					else if (position[i] < location[i])
+					else if (this.position[i] < location[i])
 						nextPos[i] = 1;
 					else
 						nextPos[i] = -1;
@@ -602,7 +610,7 @@ public class Unit {
 		return this.interrupted;
 	}
 	
-	public void setInterruption(boolean flag){
+	public void setInterruption(boolean flag) {
 		this.interrupted = flag;
 	}
 	
@@ -613,4 +621,27 @@ public class Unit {
 	public boolean isSprinting(){
 		return this.getMovementStatus() == "Sprinting";
 	}
+	
+	public boolean isMoving() {
+		return this.getStatus() == "Moving";
+	}
+	
+	public void startDefaultBehavior () {
+		
+	}
+	
+	public void work() throws NotValidDurationException {
+		float time = (float) (500 / this.getStrength());
+		times = time*5
+		time = time/(time*5);
+		
+		for (int i = 0; i = 2500 / this.getStrength)
+			this.advanceTime(time);
+		
+		if (this.isInterrupted())
+			
+			
+	
+	}
+	public float getWorkProgress
 }
