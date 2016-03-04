@@ -1,4 +1,5 @@
 import java.util.Arrays;
+import java.util.Random;
 
 import be.kuleuven.cs.som.annotate.Basic;
 import be.kuleuven.cs.som.annotate.Immutable;
@@ -436,12 +437,12 @@ public class Unit {
 
 	/**
 	 * Update the position and status of a Unit,
-	 * based on that Unit's current position, attributes and a given duration Ã¢Ë†â€ t in seconds of game time.
+	 * based on that Unit's current position, attributes and a given duration âˆ†t in seconds of game time.
 	 */
 	public void advanceTime(double duration, double[] speed, String status) throws NotValidDurationException {
 			if (!isValidDuration(duration))
 				throw new NotValidDurationException(duration);
-			this.setStatus("Moving");
+			this.setStatus(status);
 			
 			double[] oldPos = this.getPosition();				
 			double[] newPos = { oldPos[0] + (duration * speed[0]),
@@ -453,24 +454,23 @@ public class Unit {
 		//	if (this.getStatus() == "Resting")				
 		//		this.restore(duration);					
 	}
-	
 
 	public void advanceTime(double duration,Unit defender){
 		defender.setStatus("Fighting");
 		this.setStatus("Fighting");
-		wait(duration);
+		wait((long) (1000*duration));
 	}
 	
 	public void advanceTime(double duration){
 		this.setStatus("Resting");
 		this.restore(duration);
-		wait(duration);
+		wait((long) (1000*duration));
 	}
 	
 	
 	public static String getRandomActivity(String[] activities) {
 	    int rnd = new Random().nextInt(activities.length);
-	    return array[rnd];
+	    return activities[rnd];
 	}
 	
 	public void attack(Unit defender){
@@ -487,15 +487,20 @@ public class Unit {
 		boolean dodged = (new Random().nextDouble() <= dodgeProb);
 		
 		if (dodged == true){
-			pos = defender.getPosition();
-			addition = [0,0,0]
+			double[] pos = defender.getPosition();
+			double[] evasion = {0,0,0};
 			for(int i=0; i<2; i++){
 				
 				double plus = new Random().nextDouble();
 				double randomValue = -1 + 2 * plus;
-				evasion[i]= randomValue
+				evasion[i]= randomValue;
 			}
-			double[] newPos = pos + addition
+			double [] newPos = new double[3];
+			
+			for (int i =0; i < pos.length;)
+				
+				newPos[i] = pos[i] + evasion[i];
+			
 			defender.setPosition(newPos);
 		}
 		
@@ -505,10 +510,18 @@ public class Unit {
 			if (blocked != true){
 				double curHealth = defender.getHitpoints();
 				double damage = this.getStrength()/10;
-				defender.setHitpoints(curHealth-damage);
+				defender.setHitpoints((int) (curHealth-damage));
 			}
 		}
 	}
+	private void advanceTime(float time) {
+		this.setStatus("Working");
+		
+		if (time < (float) 0.2)
+			this.setStatus("Default");
+		wait((long) (time * 1000));
+	}
+	
 	/**
 	 * This method will initiate resting
 	 * 
@@ -611,18 +624,20 @@ public class Unit {
 	/**
 	 * Initiate movement to a game world cube adjacent to the unit's current location.
 	 * @param 	x
-	 * 			The x-coÃƒÂ¶rdinate to which the unit has to move.
+	 * 			The x-coÃ¶rdinate to which the unit has to move.
 	 * @param 	y
-	 * 			The y coÃƒÂ¶rdinate to which the unit has to move.
+	 * 			The y coÃ¶rdinate to which the unit has to move.
 	 * @param 	z
-	 * 			The z coÃƒÂ¶rdinate to which the unit has to move.
+	 * 			The z coÃ¶rdinate to which the unit has to move.
 	 */
 	public void moveToAdjacent(double[] targetPos){
-
-		double[] speed = this.getVelocity(this.getPosition(), targetPos);
-		float vy = (float) speed[1];
-		float vx = (float) speed[0];
-		this.setOrientation((float) Math.atan2(vy, vx));
+		if (!this.isMoving()) {
+			double[] speed = this.getVelocity(this.getPosition(), targetPos);
+			float vy = (float) speed[1];
+			float vx = (float) speed[0];
+			this.setOrientation((float) Math.atan2(vy, vx));
+			this.advanceTime(duration, speed, status);
+			}
 	}
 	
 	/**
@@ -638,9 +653,9 @@ public class Unit {
 			if (!this.isInterrupted()){
 				for (int i = 0; i < nextPos.length;) {
 					
-					if (position[i] == location[i])
+					if (this.getPosition()[i] == location[i])
 						nextPos[i] = 0;
-					else if (position[i] < location[i])
+					else if (this.position[i] < location[i])
 						nextPos[i] = 1;
 					else
 						nextPos[i] = -1;
@@ -657,7 +672,7 @@ public class Unit {
 		return this.interrupted;
 	}
 	
-	public void setInterruption(boolean flag){
+	public void setInterruption(boolean flag) {
 		this.interrupted = flag;
 	}
 	
@@ -667,5 +682,51 @@ public class Unit {
 	
 	public boolean isSprinting(){
 		return this.getMovementStatus() == "Sprinting";
+	}
+	
+	public boolean isMoving() {
+		return this.getStatus() == "Moving";
+	}
+	
+	public boolean isWorking() {
+		return this.getStatus() == "Working";
+	}
+	
+	public boolean isResting() {
+		return this.getStatus() == "Resting";
+	}
+	
+	public void startDefaultBehavior () {
+		
+	}
+	
+	public void work() throws NotValidDurationException {
+		float time = (float) (500 / this.getStrength());
+		float nbtimes = time * 5;
+		
+		for (int i = 0; i < (int) nbtimes;)			
+			this.advanceTime((float) 0.2);
+		
+		this.advanceTime((float) (time-0.2*nbtimes));
+
+
+			
+			
+	
+	}
+	public float getWorkProgress() {
+		return (float) 1.2;
+	}
+	
+	public boolean canBeInterrupted(String interruptor) {
+		if (this.isWorking())
+			return true;
+		
+		if ((this.isResting()) && (this.getStamina() > 0))
+			return true;
+		
+		if ((this.isMoving()) && (interruptor == "attack"))
+			return true;
+		return false;
 	}
 }
