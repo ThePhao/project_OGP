@@ -435,39 +435,22 @@ public class Unit {
 		this.status= activity;
 	}
 
-	/**
-	 * Update the position and status of a Unit,
-	 * based on that Unit's current position, attributes and a given duration âˆ†t in seconds of game time.
-	 */
-	public void advanceTime(double duration, double[] speed, String status) throws NotValidDurationException {
-			if (!isValidDuration(duration))
-				throw new NotValidDurationException(duration);
-			this.setStatus(status);
-			
-			double[] oldPos = this.getPosition();				
-			double[] newPos = { oldPos[0] + (duration * speed[0]),
-								oldPos[1] + (duration * speed[1]),
-								oldPos[2] + (duration * speed[2])};
-			
-			this.setPosition(newPos);
-			
-		//	if (this.getStatus() == "Resting")				
-		//		this.restore(duration);					
 	}
 
-	public void advanceTime(double duration,Unit defender){
+	public void advanceTime(double duration, Unit defender) throws InterruptedException {
 		defender.setStatus("Fighting");
 		this.setStatus("Fighting");
-		wait((long) (1000*duration));
+				wait((long) (1000*duration));		
 	}
 	
-	public void advanceTime(double duration){
-		this.setStatus("Resting");
-		this.restore(duration);
-		wait((long) (1000*duration));
+	private void advanceTime(float time) throws InterruptedException {
+		this.setStatus("Working");
+		wait((long) (time * 1000));
+
+		if (time < (float) 0.2)
+			this.setStatus("Default");
 	}
-	
-	
+
 	public static String getRandomActivity(String[] activities) {
 	    int rnd = new Random().nextInt(activities.length);
 	    return activities[rnd];
@@ -514,47 +497,80 @@ public class Unit {
 			}
 		}
 	}
-	private void advanceTime(float time) {
-		this.setStatus("Working");
-		
-		if (time < (float) 0.2)
-			this.setStatus("Default");
-		wait((long) (time * 1000));
-	}
-	
 	/**
-	 * This method will initiate resting
+	 * This method will initiate resting.
 	 * 
 	 * @post The units current status will be resting
 	 */
 	public void rest(){
-		this.setStatus("Resting");
+		if (this.canBeInterrupted("Resting"))
+			Thread.currentThread().interrupt();
+			
+			double initTime = 200 / this.getToughness() * 0.2;
+			int nb_times = (int) (200 / this.getToughness());
+
+			for (int i = 0; i < nb_times;)
+				try {
+					this.advanceTime(0.2, "InitResting");
+				} catch (InterruptedException e) {
+					return;
+				}
+			
+			try {
+				this.advanceTime(initTime - (0.2 * nb_times), "InitResting");
+			} catch (InterruptedException e) {
+				return;
+			}
+			
+			this.restore();
+			this.setStatus("Resting");
+			while (this.isResting())
+				for (int i = 0; i < nb_times;)
+					try {
+						this.advanceTime(0.2, "Resting");
+					} catch (InterruptedException e) {
+						return;
+					}
+				
+				try {
+					this.advanceTime(initTime - (0.2 * nb_times), "Resting");
+				} catch (InterruptedException e) {
+					return;
+				}
+				
+				this.restore();
+			
+			this.startDefaultBehavior();
 	}
+	
+	public void advanceTime(double duration, String status) throws InterruptedException {
+		this.setStatus(status);
+		try {
+			wait((long) (1000*duration));
+		} catch (InterruptedException e) {
+			throw new InterruptedException();
+		}
+			
+	}
+
 	/**
 	 * Restore hitpoints and stamina of a unit, when it is resting.
 	 * 
 	 * @post The units hitpoints will be replenished with ...
 	 * 		 If the maximum hitpoints is reached, the units stamina will be replenished with ...
 	 */
-	public void restore(double duration) throws NotValidDurationException {
-		if ((duration * toughness / 20) < 1) 
-			throw new NotValidDurationException(duration);
-		
-		if (this.isInterrupted())
-			this.setStatus("Fighting");
-		
-		int toughness = this.getToughness();
-		int maxHitpoints = this.getMaxHitpoints();
+	public void restore() {
 
-		if (this.getHitpoints() == maxHitpoints)
-			if (this.getStamina() == maxHitpoints)
+
+		if (this.getHitpoints() == this.getMaxHitpoints())
+			if (this.getStamina() == this.getMaxHitpoints())
 				this.setStatus("Default");
 		
 			else
-				this.setStamina((int) (this.getStamina() + (duration * toughness / 20)));
+				this.setStamina((int) (this.getStamina() + 2));
 		
 		else		
-			this.setHitpoints((int) (this.getHitpoints() + (duration * toughness / 40)));
+			this.setHitpoints((int) (this.getHitpoints() + 1));
 	}
 	
 	/**
@@ -566,7 +582,7 @@ public class Unit {
 	public static final int CUBE_LENGTH = 1;
 	
 	/**
-	 * Calculate the Velocity of a Unit.
+	 * Calculate the velocity of a Unit.
 	 */
 	public double[] getVelocity(double[] startPos,double[] targetPos){
 		
@@ -631,15 +647,43 @@ public class Unit {
 	 * 			The z coÃ¶rdinate to which the unit has to move.
 	 */
 	public void moveToAdjacent(double[] targetPos){
-		if (!this.isMoving()) {
+		if (this.canBeInterrupted("Moving")) {
+			Thread.currentThread().interrupt();
+			
 			double[] speed = this.getVelocity(this.getPosition(), targetPos);
 			float vy = (float) speed[1];
 			float vx = (float) speed[0];
 			this.setOrientation((float) Math.atan2(vy, vx));
-			this.advanceTime(duration, speed, status);
+			
+			while (this.getPosition() != targetPos)
+			try {
+				this.advanceTime(0.2, speed);
+			} catch (InterruptedException e) {
+				if (this.isFighting())
+					return;
+				else
+					this.setPosition(targetPos);
+			}
 			}
 	}
 	
+	/**
+	 * Update the position and status of a Unit,
+	 * based on that Unit's current position, attributes and a given duration âˆ†t in seconds of game time.
+	 */
+	public void advanceTime(double duration, double[] speed) throws InterruptedException {
+	
+		this.setStatus("Moving");
+	
+		wait ((long) (duration * 1000));
+		double[] oldPos = this.getPosition();				
+		double[] newPos = { oldPos[0] + (duration * speed[0]),
+							oldPos[1] + (duration * speed[1]),
+							oldPos[2] + (duration * speed[2])};
+					
+		this.setPosition(newPos);
+		}
+
 	/**
 	 * Initiate a more complex movement from the unit's current position to another
 	 * arbitrary cube of the game world.
@@ -696,37 +740,59 @@ public class Unit {
 		return this.getStatus() == "Resting";
 	}
 	
+	public boolean isInitResting() {
+		return this.getStatus() == "Initial Resting";
+	}
+	
+	public boolean isFighting() {
+		return this.getStatus() == "Fighting";
+	}
+	
 	public void startDefaultBehavior () {
 		
 	}
 	
 	public void work() throws NotValidDurationException {
-		float time = (float) (500 / this.getStrength());
-		float nbtimes = time * 5;
+		if (this.canBeInterrupted("Working"))
+			Thread.currentThread().interrupt();
 		
-		for (int i = 0; i < (int) nbtimes;)			
-			this.advanceTime((float) 0.2);
-		
-		this.advanceTime((float) (time-0.2*nbtimes));
-
-
+			float time = (float) (500 / this.getStrength());
+			float nbtimes = time * 5;
+						
+			for (int i = 0; i < (int) nbtimes;)
+				try {
+					this.advanceTime((float) 0.2);
+				} catch (InterruptedException e) {
+					return;
+				}
 			
-			
-	
+			this.advanceTime((float) (time - (0.2 * nbtimes)));
 	}
+	
 	public float getWorkProgress() {
 		return (float) 1.2;
 	}
 	
+	/**
+	 * Check whether the unit's current activity can be interrupted by the given interruptor.
+	 * 
+	 * @param 	interruptor
+	 * 			The interruptor
+	 * @return
+	 */
 	public boolean canBeInterrupted(String interruptor) {
-		if (this.isWorking())
+		if ((this.isWorking()) && (interruptor != "Working"))
 			return true;
 		
-		if ((this.isResting()) && (this.getStamina() > 0))
+		if ((this.isResting()) && (interruptor != "Resting"))
 			return true;
 		
-		if ((this.isMoving()) && (interruptor == "attack"))
+		if ((this.isInitResting()) && (interruptor == "Defending"))
 			return true;
+		
+		if ((this.isMoving()) && (interruptor != "Working"))
+			return true;
+
 		return false;
 	}
 }
