@@ -1,17 +1,17 @@
 package hillbillies.model;
-import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import be.kuleuven.cs.som.annotate.Basic;
 import be.kuleuven.cs.som.annotate.Immutable;
 import be.kuleuven.cs.som.annotate.Raw;
-import hillbillies.OutOfBoundsException;
+import hillbillies.model.OutOfBoundsException;
 
 /**
  * A class of Hillbilly units.
  * 
  * @author 	Joris Schrauwen, Wim Schmitz
+ * 			
  * 
  * @invar 	Each unit can have its position as position.
  * 			| isValidPosition(this.getPosition())
@@ -50,17 +50,17 @@ public class Unit {
 	 *         	This new unit cannot have the given name as its name.
 	 *       	| ! canHaveAsName(this.getName())
 	 */
-	public Unit(String name, double[] position, int weight, int agility, 
+	public Unit(String name, int[] position, int weight, int agility, 
 				int strength, int toughness, boolean enableDefaultBehavior) 
 					throws OutOfBoundsException, IllegalArgumentException {
-						
-		if (!isValidPosition(position))
-			throw new OutOfBoundsException();
+		double[] pos = {(double) position[0], (double) position[1], (double) position[2]};	
+		if (!isValidPosition(pos))
+			throw new OutOfBoundsException(pos);
 		
 		if (!canHaveAsName(name))
 			throw new IllegalArgumentException(name);
 		
-		this.position = position;	
+		this.position = pos;	
 		this.name = name;
 		
 		if (isWithinRange(strength))		
@@ -82,7 +82,7 @@ public class Unit {
 		this.movement = "Still";
 		this.enableDefaultBehavior = enableDefaultBehavior;
 		this.status = null;
-		this.speed = 0;
+		this.speed = new double[] {0, 0, 0};
 		
 	}
 	
@@ -149,14 +149,14 @@ public class Unit {
 	/**
 	 * Variable registering the passed time since the unit started its current activity
 	 */
-	private int counter
+	private double counter;
 	
 	/**
 	 * Variable registering whether default behavior is enabled for this unit.
 	 */
 	private boolean enableDefaultBehavior;
 	
-	private double speed;
+	private double[] speed;
 	/**
 	 * Variable registering the lower bound for the x, y and z
 	 * dimensions of the generated world.
@@ -430,14 +430,19 @@ public class Unit {
 		return 0;
 	}
 	
-	public double getSpeed() {
+	public double[] getSpeed() {
 		return this.speed;
 	}
 	
 	public void setSpeed(double[] speed) {		
-		this.speed = Math.sqrt(Math.pow(speed[0],2) + Math.pow(speed[1], 2) + Math.pow(speed[2], 2));
+		this.speed = speed;
 	}
 	
+	public double getCurrentSpeed() {
+		
+		return Math.sqrt(Math.pow(speed[0],2) + Math.pow(speed[1], 2) + Math.pow(speed[2], 2));
+	}
+
 	private void setHitpoints(int hitpoints){
 		if ((hitpoints >= getMinHitpoints()) && (hitpoints <= this.getMaxHitpoints()))
 			this.hitpoints = hitpoints;
@@ -496,7 +501,11 @@ public class Unit {
 		defender.setOrientation(defenderOr);
 		
 		for(int i=1; i<5; i++)
-				this.advanceTime(0.2, defender);
+			try {
+				this.advanceTime(0.2);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 
 		
 		double dodgeProb = 0.2*defender.getAgility()/this.getAgility();
@@ -541,16 +550,17 @@ public class Unit {
 			
 			double initTime = 200 / this.getToughness() * 0.2;
 			int nb_times = (int) (200 / this.getToughness());
-
+			
+			this.setStatus("InitResting");
 			for (int i = 0; i < nb_times;)
 				try {
-					this.advanceTime(0.2, "InitResting");
+					this.advanceTime(0.2);
 				} catch (InterruptedException e) {
 					return;
 				}
 			
 			try {
-				this.advanceTime(initTime - (0.2 * nb_times), "InitResting");
+				this.advanceTime(initTime - (0.2 * nb_times));
 			} catch (InterruptedException e) {
 				return;
 			}
@@ -560,13 +570,13 @@ public class Unit {
 			while (this.isResting())
 				for (int i = 0; i < nb_times;)
 					try {
-						this.advanceTime(0.2, "Resting");
+						this.advanceTime(0.2);
 					} catch (InterruptedException e) {
 						return;
 					}
 				
 				try {
-					this.advanceTime(initTime - (0.2 * nb_times), "Resting");
+					this.advanceTime(initTime - (0.2 * nb_times));
 				} catch (InterruptedException e) {
 					return;
 				}
@@ -576,55 +586,73 @@ public class Unit {
 			this.startDefaultBehavior();
 	}
 	
-public void advanceTime(double[] position, double duration, String status) {
+	public void advanceTime(double duration) throws InterruptedException {
 		
-		this.setCounter(this.getCounter() + duration)
-		if (this.getCounter() >= REST_INTERVAL) && (this.getStatus() != "Resting"){
-			this.setCounter(0)
-			this.startResting();
+		if ((this.getCounter() >= REST_INTERVAL) && (this.getStatus() != "Resting")) {
+			this.setCounter(0);
+			this.rest();
+			return;
 		}
 		
-		durationM = (long) (1000*duration)
-		if (this.getStatus()=="Fighting"){
+		this.setCounter(this.getCounter() + duration);
+		
+		long durationM = (long) (1000 * duration);
+		if (this.getStatus() == "Fighting"){
 			try {
 				wait(durationM);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}	
 		}
 		
-		if (this.getStatus()=="Moving"){
+		if (this.getStatus() == "Moving"){
 			
-			int speed = this.getVelocity()
-			wait (durationM);
-			double[] oldPos = this.getPosition();				
-			double[] newPos = { oldPos[0] + (duration * speed[0]),
-					    oldPos[1] + (duration * speed[1]),
-					    oldPos[2] + (duration * speed[2]) };
-			if (this.destinationReached(newPos, target))
-				this.setPosition(target);
-			else
-				this.setPosition(newPos);
+			double[] speed = this.getSpeed();
+			try {
+				wait (durationM);
+				double[] oldPos = this.getPosition();				
+				double[] newPos = { oldPos[0] + (duration * speed[0]),
+						    		oldPos[1] + (duration * speed[1]),
+						    		oldPos[2] + (duration * speed[2]) };
+				if (this.isSprinting())
+					this.setStamina(this.getStamina() - 1);
+					if (this.getStamina() == 0)
+						this.stopSprinting();
+				if (isValidPosition(newPos))
+					this.setPosition(newPos);
+				
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				throw new InterruptedException();
 			}
+			
+			}
+		
+		
+		if (this.getStatus() == "Working"){
+			try {
+				wait(durationM);
+			} catch (InterruptedException e) {
+				throw new InterruptedException();
+			}
+
 		}
 		
-		if (this.getStatus()=="Working"){
-			wait(durationM);
-			if (time < (float) 0.2)
-				this.setStatus("Default");
-		}
-		
-		if(this.getStatus()=="Resting"){
-			wait(durationM)
+		if(this.getStatus()== "Resting"){
+			try {
+				wait(durationM);
+			} catch (InterruptedException e) {
+				throw new InterruptedException();
+			}
 			
 		}
 	}
+	
 	private void setCounter(double time){
-		this.counter = time
+		this.counter = time;
 	}
 	public double getCounter(){
-		return this.counter
+		return this.counter;
 	}
 	/**
 	 * Restore hitpoints and stamina of a unit, when it is resting.
@@ -716,26 +744,36 @@ public void advanceTime(double[] position, double duration, String status) {
 	 * @param 	targetPos
 	 * 			The adjacent cube to which this unit has to move.
 	 */
-	public void moveToAdjacent(double[] targetPos) throws InterruptedException{
+	public void moveToAdjacent(double[] targetPos, double[] speed) throws InterruptedException{
 		if (this.canBeInterrupted("Moving")) {
 			Thread.currentThread().interrupt();
-			
-			double[] speed = this.getVelocity(this.getPosition(), targetPos);
 			float vy = (float) speed[1];
 			float vx = (float) speed[0];
 			this.setOrientation((float) Math.atan2(vy, vx));
+			this.setSpeed(speed);
 			
-			while (this.getPosition() != targetPos)
+			double[] pos = this.getPosition();
+			double[] destination = {pos[0] + targetPos[0], 
+									pos[1] + targetPos[1], 
+									pos[2] + targetPos[2]};
+			
+			while (this.getPosition() != destination)
 				try {
-					this.advanceTime(0.1, speed, targetPos);
+					this.advanceTime(0.1);
+
+					if (this.destinationReached(this.getPosition(), destination))
+						this.setPosition(destination);
+					
 				} catch (InterruptedException e) {
 					if (this.isFighting())
 						throw new InterruptedException();
 					else
 						try {
 							this.setInterruption(true);
-							this.advanceTime(0.1, speed, targetPos);
-							
+							this.advanceTime(0.1);
+							if (this.destinationReached(this.getPosition(), targetPos))
+								this.setPosition(targetPos);
+
 						} catch (InterruptedException e1) {
 							if (this.isFighting())
 								throw new InterruptedException();
@@ -788,9 +826,10 @@ public void advanceTime(double[] position, double duration, String status) {
 			double[] destination = new double [3];
 			if (!isValidPosition(destination))
 				return;
-			
+
 			for (int i = 0; i <3;)
 				destination[i] = (destination[i] + 0.5);
+			
 			while (this.getCurrentSpeed() > 0)
 				try {
 					wait((long) 50);
@@ -801,23 +840,24 @@ public void advanceTime(double[] position, double duration, String status) {
 			
 			this.setInterruption(false);
 			
-				
+			double[] speed = new double[3];
 			double[] nextPos = new double[3];
 			
 			while (destination != this.getPosition())
+				speed = this.getVelocity(this.getPosition(), destination);
 
 				for (int i = 0; i < nextPos.length;) {
 						
 					if (this.getPosition()[i] == destination[i])
-						nextPos[i] = 0 + this.getPosition()[i];
+						nextPos[i] = 0;
 					else if (this.position[i] < destination[i])
-						nextPos[i] = 1 + this.getPosition()[i];
+						nextPos[i] = 1;
 					else
-						nextPos[i] = -1 + this.getPosition()[i];
+						nextPos[i] = -1;
 					}
 					
 				try {
-					this.moveToAdjacent(nextPos);
+					this.moveToAdjacent(nextPos, speed);
 				} catch (InterruptedException e) {
 					this.setStatus("Fighting");
 					while(this.isFighting())
@@ -828,7 +868,7 @@ public void advanceTime(double[] position, double duration, String status) {
 						}
 					
 					try {
-						this.moveToAdjacent(nextPos);
+						this.moveToAdjacent(nextPos, speed);
 					} catch (InterruptedException e1) {
 						this.setStatus("Fighting");							
 					}
@@ -850,13 +890,8 @@ public void advanceTime(double[] position, double duration, String status) {
 		this.interrupted = flag;
 	}
 	
-	public double getCurrentSpeed() {
-		
-		return 5;
-	}
-	
 	public boolean isSprinting(){
-		return this.movement() == "Sprinting";
+		return this.movement == "Sprinting";
 	}
 	
 	public void startSprinting() {
@@ -891,7 +926,11 @@ public void advanceTime(double[] position, double duration, String status) {
 	public boolean isDefaultBehaviorEnabled() {
 		return this.enableDefaultBehavior;
 	}
-		
+	
+	public void setDefaultBehaviorEnabled(boolean value) {
+		this.enableDefaultBehavior = value;
+	}
+	
 	/**
 	 * Start default behavior for a unit. This unit will randomly choose one of three activities namely: 
 	 * working, resting or moving to a random location in the game world. This unit will keep choosing and finishing activities
@@ -964,3 +1003,4 @@ public void advanceTime(double[] position, double duration, String status) {
 		return false;
 	}
 }
+
