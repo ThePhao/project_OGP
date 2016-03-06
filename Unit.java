@@ -1,5 +1,6 @@
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import be.kuleuven.cs.som.annotate.Basic;
 import be.kuleuven.cs.som.annotate.Immutable;
@@ -228,9 +229,19 @@ public class Unit {
 	 * Return the position of the cube occupied by this unit.
 	 */
 	public int[] getCube(){
-		int[] cubeposition = new int[this.position.length];
-		for (int i = 0; i < cubeposition.length; ++i)
+		int[] cubeposition = new int[3];
+		for (int i = 0; i < cubeposition.length;)
 		    cubeposition[i] = (int) this.position[i];
+		return cubeposition;
+	}
+	
+	/**
+	 * Return the position of the cube occupied by this position.
+	 */
+	public int[] getCube(double[] position) {
+		int[] cubeposition = new int[3];
+		for (int i =0; i < cubeposition.length;)
+			cubeposition[i] = (int) position[i];
 		return cubeposition;
 	}
 	
@@ -435,7 +446,7 @@ public class Unit {
 		this.status= activity;
 	}
 
-	}
+	
 
 	public void advanceTime(double duration, Unit defender) throws InterruptedException {
 		defender.setStatus("Fighting");
@@ -613,7 +624,7 @@ public class Unit {
 	}
 	
 	/**
-	 * Calculate the distance between two points in the game world
+	 * Calculate the distance between two points in the game world.
 	 * @throws	OutOfBoundsException
 	 * 			The given position is out of bounds.
 	 * 			| ! isValidPosition(position)
@@ -627,9 +638,12 @@ public class Unit {
 	
 	/**
 	 * Check whether the given duration is a valid duration to advance the time.
+	 * 
 	 * @param 	duration
 	 * 			The duration to check.
-	 * @return	True if and only if the given duration is larger than or equal to zero, and always smaller than 0.2.
+	 * @return	True if and only if the given duration is larger than or equal to zero, 
+	 * 			and always smaller than 0.2.
+	 * 			| result == ((duration < 0) || (duration >=0.2))
 	 */
 	public static boolean isValidDuration(double duration){
 			if ((duration < 0) || (duration >=0.2))
@@ -639,14 +653,11 @@ public class Unit {
 	
 	/**
 	 * Initiate movement to a game world cube adjacent to the unit's current location.
-	 * @param 	x
-	 * 			The x-coÃ¶rdinate to which the unit has to move.
-	 * @param 	y
-	 * 			The y coÃ¶rdinate to which the unit has to move.
-	 * @param 	z
-	 * 			The z coÃ¶rdinate to which the unit has to move.
+	 * 
+	 * @param 	targetPos
+	 * 			The adjacent cube to which this unit has to move.
 	 */
-	public void moveToAdjacent(double[] targetPos){
+	public void moveToAdjacent(double[] targetPos) throws InterruptedException{
 		if (this.canBeInterrupted("Moving")) {
 			Thread.currentThread().interrupt();
 			
@@ -656,22 +667,40 @@ public class Unit {
 			this.setOrientation((float) Math.atan2(vy, vx));
 			
 			while (this.getPosition() != targetPos)
-			try {
-				this.advanceTime(0.2, speed);
-			} catch (InterruptedException e) {
-				if (this.isFighting())
-					return;
-				else
-					this.setPosition(targetPos);
-			}
-			}
+				try {
+					this.advanceTime(0.1, speed, targetPos);
+				} catch (InterruptedException e) {
+					if (this.isFighting())
+						throw new InterruptedException();
+					else
+						try {
+							this.setInterruption(true);
+							this.advanceTime(0.1, speed, targetPos);
+							
+						} catch (InterruptedException e1) {
+							if (this.isFighting())
+								throw new InterruptedException();
+							else
+								return;
+						}
+				}	
+		}
 	}
-	
+
 	/**
-	 * Update the position and status of a Unit,
-	 * based on that Unit's current position, attributes and a given duration âˆ†t in seconds of game time.
+	 * Set the unit's status to moving and update it's position,
+	 * based on that Unit's current position, speed, target position 
+	 * and a given duration in seconds of game time.
+	 * 
+	 * @param 	duration
+	 * 			The amount of time to advance.
+	 * @param 	speed
+	 * 			The speed at which the unit moves for each dimension.
+	 * @param 	target
+	 * 			The unit's destination.
+	 * @throws 	InterruptedException
 	 */
-	public void advanceTime(double duration, double[] speed) throws InterruptedException {
+	public void advanceTime(double duration, double[] speed, double[] target) throws InterruptedException {
 	
 		this.setStatus("Moving");
 	
@@ -679,11 +708,41 @@ public class Unit {
 		double[] oldPos = this.getPosition();				
 		double[] newPos = { oldPos[0] + (duration * speed[0]),
 							oldPos[1] + (duration * speed[1]),
-							oldPos[2] + (duration * speed[2])};
-					
-		this.setPosition(newPos);
+							oldPos[2] + (duration * speed[2]) };
+		if (this.destinationReached(newPos, target))
+			this.setPosition(target);
+		else
+			this.setPosition(newPos);
 		}
-
+	
+	/**
+	 * Check whether the given double precision number lies between the given borders.
+	 * @param 	x
+	 * 			The double precision number to be checked.
+	 * @param 	a
+	 * 			One of the borders of the interval.
+	 * @param 	b
+	 * 			The other border of the interval.
+	 */
+	public static boolean intervalContains(double x, double a, double b) {
+		if ((x < (a - (int) a)) && (x > (b - (int) b)))
+			return true;
+		if ((x < (b - (int) b)) && (x > (a - (int) a)))
+			return true;
+		return false;
+	}
+	
+	public boolean destinationReached(double[] newPos, double[] target) {
+		double[] oldPos = this.getPosition();
+		if ((intervalContains(0.5, oldPos[0], newPos[0])) &&
+				(intervalContains(0.5, oldPos[1], newPos[1])) &&
+				(intervalContains(0.5, oldPos[2], newPos[2])) &&
+				(this.getCube(target) == this.getCube(newPos)))
+			
+			return true;
+		return false;
+	}
+	
 	/**
 	 * Initiate a more complex movement from the unit's current position to another
 	 * arbitrary cube of the game world.
@@ -691,25 +750,58 @@ public class Unit {
 	 * 			The new location to which the unit has to move.
 	 */
 	public void moveTo(double[] location){
-		double[] nextPos = new double[3];
-		
-		while (!Arrays.equals(location, this.getPosition()))
-			if (!this.isInterrupted()){
-				for (int i = 0; i < nextPos.length;) {
-					
-					if (this.getPosition()[i] == location[i])
-						nextPos[i] = 0;
-					else if (this.position[i] < location[i])
-						nextPos[i] = 1;
-					else
-						nextPos[i] = -1;
+		if (this.canBeInterrupted("Moving"))
+			Thread.currentThread().interrupt();
+			
+			while ((this.getMovementStatus() == "Walking") || (this.getMovementStatus() == "Sprinting"))
+				try {
+					wait(50);
+				} catch (InterruptedException e2) {
+					// TODO Auto-generated catch block
+					e2.printStackTrace();
 				}
-				this.moveToAdjacent(nextPos);
-			}
-			else
-				this.setStatus("Resting");
+			
+			this.setInterruption(false);
+			
 				
+			double[] nextPos = new double[3];
+			
+			while (location != this.getPosition())
 
+				for (int i = 0; i < nextPos.length;) {
+						
+					if (this.getPosition()[i] == location[i])
+						nextPos[i] = 0 + this.getPosition()[i];
+					else if (this.position[i] < location[i])
+						nextPos[i] = 1 + this.getPosition()[i];
+					else
+						nextPos[i] = -1 + this.getPosition()[i];
+					}
+					
+				try {
+					this.moveToAdjacent(nextPos);
+				} catch (InterruptedException e) {
+					this.setStatus("Fighting");
+					while(this.isFighting())
+						try {
+							wait(200);
+						} catch (InterruptedException e1) {
+							e1.printStackTrace();
+						}
+					
+					try {
+						this.moveToAdjacent(nextPos);
+					} catch (InterruptedException e1) {
+						this.setStatus("Fighting");							
+					}
+					
+					if (this.isInterrupted() == true)
+						this.movement = "Still";
+						return;
+				}
+			
+			if (location == this.getPosition())
+				this.setStatus("Default");
 	}
 	
 	public boolean isInterrupted() {
@@ -726,6 +818,11 @@ public class Unit {
 	
 	public boolean isSprinting(){
 		return this.getMovementStatus() == "Sprinting";
+	}
+	
+	public void setSprinting() {
+		if (this.getStamina() > 0)
+			this.movement = "Sprinting";
 	}
 	
 	public boolean isMoving() {
@@ -748,11 +845,32 @@ public class Unit {
 		return this.getStatus() == "Fighting";
 	}
 	
+	/**
+	 * Start default behavior for a unit. This unit will randomly choose one of three activities namely: 
+	 * working, resting or moving to a random location in the game world. This unit will keep choosing and finishing activities
+	 */
 	public void startDefaultBehavior () {
-		
+		while (this.getStatus() == "Default") {
+			int rnd = ThreadLocalRandom.current().nextInt(0, 2 + 1);
+			double[] randomLoc = new double[3];
+			if (rnd == 0)
+				this.work();
+			else if (rnd == 1)
+				this.rest();
+			else if (rnd == 2)
+	
+				for (int i = 0; i < 3;)
+					randomLoc[i] = (ThreadLocalRandom.current().nextInt(0, 49 + 1) + 0.5);
+				this.moveTo(randomLoc);
+		}
+		return;
 	}
 	
-	public void work() throws NotValidDurationException {
+	public void stopDefaultBehavior () {
+		this.setStatus(null);
+	}
+	
+	public void work() {
 		if (this.canBeInterrupted("Working"))
 			Thread.currentThread().interrupt();
 		
@@ -766,11 +884,11 @@ public class Unit {
 					return;
 				}
 			
-			this.advanceTime((float) (time - (0.2 * nbtimes)));
-	}
-	
-	public float getWorkProgress() {
-		return (float) 1.2;
+			try {
+				this.advanceTime((float) (time - (0.2 * nbtimes)));
+			} catch (InterruptedException e) {
+				return;
+			}
 	}
 	
 	/**
@@ -778,7 +896,6 @@ public class Unit {
 	 * 
 	 * @param 	interruptor
 	 * 			The interruptor
-	 * @return
 	 */
 	public boolean canBeInterrupted(String interruptor) {
 		if ((this.isWorking()) && (interruptor != "Working"))
@@ -791,6 +908,9 @@ public class Unit {
 			return true;
 		
 		if ((this.isMoving()) && (interruptor != "Working"))
+			return true;
+		
+		if (this.getStatus() == null)
 			return true;
 
 		return false;
