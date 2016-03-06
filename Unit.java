@@ -147,6 +147,11 @@ public class Unit {
 	private boolean interrupted;
 	
 	/**
+	 * Variable registering the passed time since the unit started its current activity
+	 */
+	private int counter
+	
+	/**
 	 * Variable registering whether default behavior is enabled for this unit.
 	 */
 	private boolean enableDefaultBehavior;
@@ -280,6 +285,14 @@ public class Unit {
 	 * 			| result == 200
 	 */
 	public static final int MAX_ATTRIBUTE = 200;
+	
+	/**
+	 * Constant reflecting the duration after which a Unit will stop its current activity, and start resting.
+	 * 
+	 * @return	The interval to do an activity.
+	 * 		| result == 180
+	 */
+	public static final double REST_INTERVAL = 180;
 	
 	/**
 	 * Return the weight of this unit.
@@ -469,30 +482,7 @@ public class Unit {
 	private void setStatus(String activity){
 		this.status= activity;
 	}
-
 	
-
-	public void advanceTime(double duration, Unit defender) {
-		defender.setStatus("Fighting");
-		this.setStatus("Fighting");
-			try {
-				wait((long) (1000*duration));
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}		
-	}
-	
-	private void advanceTime(float time) throws InterruptedException {
-		this.setStatus("Working");
-		
-		if (time < (float) 0.2)
-			wait ((long) time * 1000);
-			this.setStatus("Default");
-			
-		wait((long) (time * 1000));
-	}
-
 	public static String getRandomActivity(String[] activities) {
 	    int rnd = new Random().nextInt(activities.length);
 	    return activities[rnd];
@@ -586,16 +576,56 @@ public class Unit {
 			this.startDefaultBehavior();
 	}
 	
-	public void advanceTime(double duration, String status) throws InterruptedException {
-		this.setStatus(status);
-		try {
-			wait((long) (1000*duration));
-		} catch (InterruptedException e) {
-			throw new InterruptedException();
+public void advanceTime(double[] position, double duration, String status) {
+		
+		this.setCounter(this.getCounter() + duration)
+		if (this.getCounter() >= REST_INTERVAL) && (this.getStatus() != "Resting"){
+			this.setCounter(0)
+			this.startResting();
 		}
+		
+		durationM = (long) (1000*duration)
+		if (this.getStatus()=="Fighting"){
+			try {
+				wait(durationM);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}	
+		}
+		
+		if (this.getStatus()=="Moving"){
 			
+			int speed = this.getVelocity()
+			wait (durationM);
+			double[] oldPos = this.getPosition();				
+			double[] newPos = { oldPos[0] + (duration * speed[0]),
+					    oldPos[1] + (duration * speed[1]),
+					    oldPos[2] + (duration * speed[2]) };
+			if (this.destinationReached(newPos, target))
+				this.setPosition(target);
+			else
+				this.setPosition(newPos);
+			}
+		}
+		
+		if (this.getStatus()=="Working"){
+			wait(durationM);
+			if (time < (float) 0.2)
+				this.setStatus("Default");
+		}
+		
+		if(this.getStatus()=="Resting"){
+			wait(durationM)
+			
+		}
 	}
-
+	private void setCounter(double time){
+		this.counter = time
+	}
+	public double getCounter(){
+		return this.counter
+	}
 	/**
 	 * Restore hitpoints and stamina of a unit, when it is resting.
 	 * 
@@ -716,35 +746,6 @@ public class Unit {
 			this.setSpeed(new double[] {0, 0, 0});
 		}
 	}
-
-	/**
-	 * Set the unit's status to moving and update it's position,
-	 * based on that Unit's current position, speed, target position 
-	 * and a given duration in seconds of game time.
-	 * 
-	 * @param 	duration
-	 * 			The amount of time to advance.
-	 * @param 	speed
-	 * 			The speed at which the unit moves for each dimension.
-	 * @param 	target
-	 * 			The unit's destination.
-	 * @throws 	InterruptedException
-	 */
-	public void advanceTime(double duration, double[] speed, double[] target) throws InterruptedException {
-	
-		this.setStatus("Moving");
-		this.setSpeed(speed);
-		
-		wait ((long) (duration * 1000));
-		double[] oldPos = this.getPosition();				
-		double[] newPos = { oldPos[0] + (duration * speed[0]),
-							oldPos[1] + (duration * speed[1]),
-							oldPos[2] + (duration * speed[2]) };
-		if (this.destinationReached(newPos, target))
-			this.setPosition(target);
-		else
-			this.setPosition(newPos);
-		}
 	
 	/**
 	 * Check whether the given double precision number lies between the given borders.
