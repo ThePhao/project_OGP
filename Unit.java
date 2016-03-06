@@ -82,6 +82,7 @@ public class Unit {
 		this.movement = "Still";
 		this.enableDefaultBehavior = enableDefaultBehavior;
 		this.status = null;
+		this.speed = 0;
 		
 	}
 	
@@ -150,6 +151,7 @@ public class Unit {
 	 */
 	private boolean enableDefaultBehavior;
 	
+	private double speed;
 	/**
 	 * Variable registering the lower bound for the x, y and z
 	 * dimensions of the generated world.
@@ -414,7 +416,15 @@ public class Unit {
 	public int getMinHitpoints(){
 		return 0;
 	}
-
+	
+	public double getSpeed() {
+		return this.speed;
+	}
+	
+	public void setSpeed(double[] speed) {		
+		this.speed = Math.sqrt(Math.pow(speed[0],2) + Math.pow(speed[1], 2) + Math.pow(speed[2], 2));
+	}
+	
 	private void setHitpoints(int hitpoints){
 		if ((hitpoints >= getMinHitpoints()) && (hitpoints <= this.getMaxHitpoints()))
 			this.hitpoints = hitpoints;
@@ -702,7 +712,8 @@ public class Unit {
 							else
 								return;
 						}
-				}	
+				}
+			this.setSpeed(new double[] {0, 0, 0});
 		}
 	}
 
@@ -722,7 +733,8 @@ public class Unit {
 	public void advanceTime(double duration, double[] speed, double[] target) throws InterruptedException {
 	
 		this.setStatus("Moving");
-	
+		this.setSpeed(speed);
+		
 		wait ((long) (duration * 1000));
 		double[] oldPos = this.getPosition();				
 		double[] newPos = { oldPos[0] + (duration * speed[0]),
@@ -773,9 +785,12 @@ public class Unit {
 			Thread.currentThread().interrupt();
 			
 			double[] destination = new double [3];
+			if (!isValidPosition(destination))
+				return;
+			
 			for (int i = 0; i <3;)
 				destination[i] = (destination[i] + 0.5);
-			while ((this.getCurrentSpeed() == "Walking") || (this.getCurrentSpeed() == "Sprinting"))
+			while (this.getCurrentSpeed() > 0)
 				try {
 					wait((long) 50);
 				} catch (InterruptedException e2) {
@@ -834,12 +849,13 @@ public class Unit {
 		this.interrupted = flag;
 	}
 	
-	public String getCurrentSpeed() {
-		return this.movement;
+	public double getCurrentSpeed() {
+		
+		return 5;
 	}
 	
 	public boolean isSprinting(){
-		return this.getCurrentSpeed() == "Sprinting";
+		return this.movement() == "Sprinting";
 	}
 	
 	public void startSprinting() {
