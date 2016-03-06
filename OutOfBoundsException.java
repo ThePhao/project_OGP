@@ -1,3 +1,4 @@
+package hillbillies.model;
 import be.kuleuven.cs.som.annotate.Basic;
 import be.kuleuven.cs.som.annotate.Immutable;
 
@@ -11,8 +12,6 @@ public class OutOfBoundsException extends Exception {
 	
 	/**
 	 * Initialize this new out of bounds exception with given position.
-	 * @param 	position
-	 * 			The position for this new out of bounds exception.
 	 * @post 	The position of this new out of bounds exception
 	 * 			is equal to the given value.
 	 * 			| new.getPosition() == position
