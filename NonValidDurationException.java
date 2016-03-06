@@ -1,3 +1,4 @@
+package hillbillies.model;
 import be.kuleuven.cs.som.annotate.Basic;
 import be.kuleuven.cs.som.annotate.Immutable;
 
@@ -16,7 +17,7 @@ public class NotValidDurationException extends Exception {
 	 * @post 	 The duration value of this new exception is equal to the given value.
 	 * 			|  new.getDuration() == duration
 	 */
-	public NotValidDurationException(double[] duration) {
+	public NotValidDurationException(double duration) {
 		this.duration = duration;
 	}
 	
@@ -24,13 +25,13 @@ public class NotValidDurationException extends Exception {
 	 * Return the position registered for this out of bounds exception. 
 	 */
 	@Basic @Immutable
-	public double[] getDuration(){
+	public double getDuration(){
 		return this.duration;
 	}
 	/**
 	 * Variable registering the position involved in this 
 	 * out of bounds exception.
 	 */
-	private final double[] duration;
+	private final double duration;
 
 }
