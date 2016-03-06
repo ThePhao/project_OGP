@@ -80,11 +80,9 @@ public class Unit {
 		this.hitpoints = getMaxHitpoints();
 		this.interrupted = false;
 		this.movement = "Still";
-		if (enableDefaultBehavior == false)
-			this.status = null;
-		else
-			this.status = "Default";
-			this.startDefaultBehavior();
+		this.enableDefaultBehavior = enableDefaultBehavior;
+		this.status = null;
+		
 	}
 	
 	/**
@@ -146,6 +144,11 @@ public class Unit {
 	 * Variable registering whether the unit's behavior is being interrupted.
 	 */
 	private boolean interrupted;
+	
+	/**
+	 * Variable registering whether default behavior is enabled for this unit.
+	 */
+	private boolean enableDefaultBehavior;
 	
 	/**
 	 * Variable registering the lower bound for the x, y and z
@@ -762,14 +765,17 @@ public class Unit {
 	/**
 	 * Initiate a more complex movement from the unit's current position to another
 	 * arbitrary cube of the game world.
-	 * @param 	location
+	 * @param 	destination
 	 * 			The new location to which the unit has to move.
 	 */
-	public void moveTo(double[] location){
+	public void moveTo(int[] location){
 		if (this.canBeInterrupted("Moving"))
 			Thread.currentThread().interrupt();
 			
-			while ((this.getMovementStatus() == "Walking") || (this.getMovementStatus() == "Sprinting"))
+			double[] destination = new double [3];
+			for (int i = 0; i <3;)
+				destination[i] = (destination[i] + 0.5);
+			while ((this.getCurrentSpeed() == "Walking") || (this.getCurrentSpeed() == "Sprinting"))
 				try {
 					wait((long) 50);
 				} catch (InterruptedException e2) {
@@ -782,13 +788,13 @@ public class Unit {
 				
 			double[] nextPos = new double[3];
 			
-			while (location != this.getPosition())
+			while (destination != this.getPosition())
 
 				for (int i = 0; i < nextPos.length;) {
 						
-					if (this.getPosition()[i] == location[i])
+					if (this.getPosition()[i] == destination[i])
 						nextPos[i] = 0 + this.getPosition()[i];
-					else if (this.position[i] < location[i])
+					else if (this.position[i] < destination[i])
 						nextPos[i] = 1 + this.getPosition()[i];
 					else
 						nextPos[i] = -1 + this.getPosition()[i];
@@ -816,7 +822,7 @@ public class Unit {
 						return;
 				}
 			
-			if (location == this.getPosition())
+			if (destination == this.getPosition())
 				this.setStatus("Default");
 	}
 	
@@ -828,17 +834,21 @@ public class Unit {
 		this.interrupted = flag;
 	}
 	
-	public String getMovementStatus() {
+	public String getCurrentSpeed() {
 		return this.movement;
 	}
 	
 	public boolean isSprinting(){
-		return this.getMovementStatus() == "Sprinting";
+		return this.getCurrentSpeed() == "Sprinting";
 	}
 	
-	public void setSprinting() {
+	public void startSprinting() {
 		if (this.getStamina() > 0)
 			this.movement = "Sprinting";
+	}
+	
+	public void stopSprinting() {
+		this.movement = "Walking";
 	}
 	
 	public boolean isMoving() {
@@ -861,6 +871,10 @@ public class Unit {
 		return this.getStatus() == "Fighting";
 	}
 	
+	public boolean isDefaultBehaviorEnabled() {
+		return this.enableDefaultBehavior;
+	}
+		
 	/**
 	 * Start default behavior for a unit. This unit will randomly choose one of three activities namely: 
 	 * working, resting or moving to a random location in the game world. This unit will keep choosing and finishing activities
@@ -868,7 +882,7 @@ public class Unit {
 	public void startDefaultBehavior () {
 		while (this.getStatus() == "Default") {
 			int rnd = ThreadLocalRandom.current().nextInt(0, 2 + 1);
-			double[] randomLoc = new double[3];
+			int[] randomLoc = new int[3];
 			if (rnd == 0)
 				this.work();
 			else if (rnd == 1)
@@ -876,7 +890,7 @@ public class Unit {
 			else if (rnd == 2)
 	
 				for (int i = 0; i < 3;)
-					randomLoc[i] = (ThreadLocalRandom.current().nextInt(0, 49 + 1) + 0.5);
+					randomLoc[i] = ThreadLocalRandom.current().nextInt(0, 49 + 1);
 				this.moveTo(randomLoc);
 		}
 		return;
@@ -920,7 +934,7 @@ public class Unit {
 		if ((this.isResting()) && (interruptor != "Resting"))
 			return true;
 		
-		if ((this.isInitResting()) && (interruptor == "Defending"))
+		if ((this.isInitResting()) && (interruptor == "Fighting"))
 			return true;
 		
 		if ((this.isMoving()) && (interruptor != "Working"))
