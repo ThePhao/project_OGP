@@ -1,3 +1,4 @@
+package hillbillies.model;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -5,6 +6,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import be.kuleuven.cs.som.annotate.Basic;
 import be.kuleuven.cs.som.annotate.Immutable;
 import be.kuleuven.cs.som.annotate.Raw;
+import hillbillies.OutOfBoundsException;
 
 /**
  * A class of Hillbilly units.
@@ -48,8 +50,8 @@ public class Unit {
 	 *         	This new unit cannot have the given name as its name.
 	 *       	| ! canHaveAsName(this.getName())
 	 */
-	public Unit(double[] position, String name, int weight, int strength, 
-			int agility, int toughness) 
+	public Unit(String name, double[] position, int weight, int agility, 
+				int strength, int toughness, boolean enableDefaultBehavior) 
 					throws OutOfBoundsException, IllegalArgumentException {
 						
 		if (!isValidPosition(position))
@@ -76,9 +78,13 @@ public class Unit {
 		this.orientation = (float) Math.PI/2;
 		this.stamina = getMaxHitpoints();
 		this.hitpoints = getMaxHitpoints();
-		this.status = "Default";
 		this.interrupted = false;
 		this.movement = "Still";
+		if (enableDefaultBehavior == false)
+			this.status = null;
+		else
+			this.status = "Default";
+			this.startDefaultBehavior();
 	}
 	
 	/**
@@ -192,6 +198,11 @@ public class Unit {
 		return this.name;
 	}
 	
+	public void setName(String newName) {
+		if (this.canHaveAsName(newName))
+			this.name = newName;
+	}
+	
 	/**
 	 * Check whether this unit can have the given name as its name.
 	 *  
@@ -286,7 +297,7 @@ public class Unit {
 	 * 			|		(weight >= (this.getAgility() + this.getStrength()) / 2))
 	 * 			|	then new.getWeight == weight
 	 */
-	private void setWeight(int weight) {
+	public void setWeight(int weight) {
 		if ((weight >= MIN_ATTRIBUTE) && (weight <= MAX_ATTRIBUTE) && 
 				(weight >= ((this.getAgility() + this.getStrength()) / 2)))
 			this.weight = weight;
@@ -310,7 +321,7 @@ public class Unit {
 	 *			| if ((strength >= MIN_ATTRIBUTE) && (strength <= MAX_ATTRIBUTE)
 	 *				then new.getStrength == strength
 	 */
-	private void setStrength(int strength) {
+	public void setStrength(int strength) {
 		if ((strength >= MIN_ATTRIBUTE) && (strength <= MAX_ATTRIBUTE))
 			this.strength = strength;
 	}
@@ -333,7 +344,7 @@ public class Unit {
 	 *			| if ((agility >= MIN_ATTRIBUTE) && (agility <= MAX_ATTRIBUTE)
 	 *				then new.getAgility == agility
 	 */
-	private void setAgility(int agility){
+	public void setAgility(int agility){
 		if ((agility >= MIN_ATTRIBUTE) && (agility <= MAX_ATTRIBUTE))
 			this.agility = agility;
 	}
@@ -356,7 +367,7 @@ public class Unit {
 	 *			| if ((toughness >= MIN_ATTRIBUTE) && (toughness <= MAX_ATTRIBUTE)
 	 *				then new.getToughness == toughness
 	 */
-	private void setToughness(int toughness){
+	public void setToughness(int toughness){
 		if( (toughness >= MIN_ATTRIBUTE) && (toughness <= MAX_ATTRIBUTE))
 			this.toughness = toughness;
 	}
@@ -448,18 +459,25 @@ public class Unit {
 
 	
 
-	public void advanceTime(double duration, Unit defender) throws InterruptedException {
+	public void advanceTime(double duration, Unit defender) {
 		defender.setStatus("Fighting");
 		this.setStatus("Fighting");
-				wait((long) (1000*duration));		
+			try {
+				wait((long) (1000*duration));
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}		
 	}
 	
 	private void advanceTime(float time) throws InterruptedException {
 		this.setStatus("Working");
-		wait((long) (time * 1000));
-
+		
 		if (time < (float) 0.2)
+			wait ((long) time * 1000);
 			this.setStatus("Default");
+			
+		wait((long) (time * 1000));
 	}
 
 	public static String getRandomActivity(String[] activities) {
@@ -475,7 +493,8 @@ public class Unit {
 		defender.setOrientation(defenderOr);
 		
 		for(int i=1; i<5; i++)
-			this.advanceTime(0.2);
+				this.advanceTime(0.2, defender);
+
 		
 		double dodgeProb = 0.2*defender.getAgility()/this.getAgility();
 		boolean dodged = (new Random().nextDouble() <= dodgeProb);
@@ -629,10 +648,7 @@ public class Unit {
 	 * 			The given position is out of bounds.
 	 * 			| ! isValidPosition(position)
 	 */
-	public double calcDistance(double[] start, double[] end) throws OutOfBoundsException{
-		if ((!isValidPosition(start)) || (!isValidPosition(end)))
-			throw new OutOfBoundsException();
-		
+	public double calcDistance(double[] start, double[] end) {		
 		return Math.sqrt(Math.pow(end[0]-start[0],2)+Math.pow(end[1]-start[1],2)+Math.pow(end[2]-start[2],2));
 	}
 	
@@ -755,7 +771,7 @@ public class Unit {
 			
 			while ((this.getMovementStatus() == "Walking") || (this.getMovementStatus() == "Sprinting"))
 				try {
-					wait(50);
+					wait((long) 50);
 				} catch (InterruptedException e2) {
 					// TODO Auto-generated catch block
 					e2.printStackTrace();
@@ -912,6 +928,7 @@ public class Unit {
 		
 		if (this.getStatus() == null)
 			return true;
+		
 
 		return false;
 	}
